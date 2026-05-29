@@ -5,137 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sazón SPS - ERP</title>
     
-    <!-- Tailwind y ChartJS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Librerías de Firebase v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        
         .chart-container { position: relative; width: 100%; max-width: 800px; margin: 0 auto; height: 40vh; max-height: 400px; min-height: 250px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
         .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; }
         .nav-item:hover { background-color: #334155; color: white; }
         .nav-item.active { background-color: #f59e0b; color: white; font-weight: 600; }
+        .filter-btn.active { background-color: #1e293b; color: white; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800">
 
-    <!-- SIDEBAR -->
     <aside class="w-64 bg-slate-900 flex flex-col shadow-xl z-20 hidden md:flex">
         <div class="p-6 flex items-center gap-3 border-b border-slate-800">
             <span class="text-3xl">🍲</span>
-            <div>
-                <h1 class="text-white font-bold text-lg leading-tight">Sazón SPS</h1>
-                <p class="text-slate-400 text-xs uppercase tracking-wider">Mini ERP</p>
-            </div>
+            <div><h1 class="text-white font-bold text-lg leading-tight">Sazón SPS</h1><p class="text-slate-400 text-xs uppercase tracking-wider">Mini ERP</p></div>
         </div>
         <nav class="flex-1 p-4 overflow-y-auto">
-            <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active">
-                <span class="mr-3 text-xl">🏠</span> Inicio
-            </div>
+            <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active"><span class="mr-3 text-xl">🏠</span> Inicio</div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Operaciones</div>
-            <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item">
-                <span class="mr-3 text-xl">🛒</span> Punto de Venta
-            </div>
-            <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item">
-                <span class="mr-3 text-xl">👨‍🍳</span> Cocina <span id="kds-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
-            </div>
+            <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item"><span class="mr-3 text-xl">🛒</span> Punto de Venta</div>
+            <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item"><span class="mr-3 text-xl">👨‍🍳</span> Cocina <span id="kds-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span></div>
+            <div onclick="window.app.switchView('historial')" id="nav-historial" class="nav-item"><span class="mr-3 text-xl">🧾</span> Historial</div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Administración</div>
-            <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item">
-                <span class="mr-3 text-xl">📦</span> Inventario
-            </div>
-            <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item">
-                <span class="mr-3 text-xl">📊</span> Reportes
-            </div>
+            <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item"><span class="mr-3 text-xl">📦</span> Inventario</div>
+            <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item"><span class="mr-3 text-xl">📊</span> Reportes</div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Soporte</div>
-            <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item">
-                <span class="mr-3 text-xl">📚</span> Guía Legal SPS
-            </div>
+            <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item"><span class="mr-3 text-xl">📚</span> Guía Legal SPS</div>
         </nav>
     </aside>
 
-    <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 h-screen overflow-y-auto relative">
         <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
             <div class="font-bold text-lg">🍲 Sazón SPS</div>
             <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded p-2 text-sm" onchange="window.app.switchView(this.value)">
-                <option value="dashboard">Inicio</option>
-                <option value="pos">Punto de Venta</option>
-                <option value="kds">Cocina</option>
-                <option value="inventario">Inventario</option>
-                <option value="reportes">Reportes</option>
-                <option value="guia">Guía Legal</option>
+                <option value="dashboard">Inicio</option><option value="pos">Punto de Venta</option><option value="kds">Cocina</option><option value="historial">Historial</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option><option value="guia">Guía Legal</option>
             </select>
         </header>
 
         <div class="p-4 md:p-8 max-w-7xl mx-auto">
-            <!-- 1. DASHBOARD -->
             <div id="view-dashboard" class="block animate-fade-in">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Resumen del Día</h2>
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Resumen de Hoy</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-emerald-500">
-                        <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Ingresos de Caja</div>
-                        <div class="text-3xl font-bold" id="dash-ventas">L. 0.00</div>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500">
-                        <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Tickets Emitidos</div>
-                        <div class="text-3xl font-bold" id="dash-ordenes">0</div>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
-                        <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Alertas de Stock</div>
-                        <div class="text-3xl font-bold" id="dash-alertas">0</div>
-                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-emerald-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Ingresos de Caja (Hoy)</div><div class="text-3xl font-bold" id="dash-ventas">L. 0.00</div></div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Tickets Emitidos (Hoy)</div><div class="text-3xl font-bold" id="dash-ordenes">0</div></div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Alertas de Stock</div><div class="text-3xl font-bold" id="dash-alertas">0</div></div>
                 </div>
             </div>
 
-            <!-- 2. PUNTO DE VENTA (POS) -->
             <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
                 <div class="flex flex-col lg:flex-row gap-6 h-full">
                     <div class="lg:w-2/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                            <h3 class="font-bold text-slate-700">Menú de Productos</h3>
-                        </div>
-                        <div class="p-4 overflow-y-auto flex-1">
-                            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
-                        </div>
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700">Menú de Productos</h3></div>
+                        <div class="p-4 overflow-y-auto flex-1"><div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div></div>
                     </div>
                     <div class="lg:w-1/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
-                        <div class="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl">
-                            <h3 class="font-bold text-slate-700">Orden #<span id="pos-order-number">1</span></h3>
-                        </div>
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700 text-xl">Orden #<span id="pos-order-number">1</span></h3></div>
                         <div id="cart-items" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50/50"></div>
                         <div class="p-4 border-t border-slate-200 bg-white rounded-b-xl">
-                            <div class="flex justify-between font-bold text-2xl text-slate-800 mb-4">
-                                <span>Total</span>
-                                <span id="cart-total">L. 0.00</span>
-                            </div>
-                            <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 text-lg" disabled>💳 Cobrar</button>
+                            <div class="flex justify-between font-bold text-3xl text-slate-800 mb-4"><span>Total</span><span id="cart-total">L. 0.00</span></div>
+                            <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 text-xl tracking-wide" disabled>💳 COBRAR</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. KDS (Cocina) -->
             <div id="view-kds" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2>
-                    <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span>
-                </div>
-                <div id="kds-empty" class="text-center text-slate-400 py-20 block">
-                    <span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes en este momento.
-                </div>
+                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2><span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span></div>
+                <div id="kds-empty" class="text-center text-slate-400 py-20 block"><span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes en este momento.</div>
                 <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
             </div>
 
-            <!-- 4. INVENTARIO -->
+            <div id="view-historial" class="hidden">
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Historial de Órdenes (Despachadas)</h2><p class="text-slate-500 text-sm">Consulta las ventas completadas por si un cliente realiza un reclamo.</p></div>
+                <div id="historial-empty" class="text-center text-slate-400 py-10 block"><span class="text-4xl mb-4 block">🧾</span>Aún no hay órdenes despachadas.</div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden" id="historial-container">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Orden / Hora</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Detalle del Pedido</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pago</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Total</th></tr></thead>
+                        <tbody id="historial-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="view-inventario" class="hidden">
                 <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Gestión de Inventario</h2></div>
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
@@ -156,47 +115,88 @@
                 </div>
             </div>
 
-            <!-- 5. REPORTES -->
             <div id="view-reportes" class="hidden">
-                <div class="mb-6 flex justify-between items-center"><h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2><button onclick="window.app.downloadCSV()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">📥 Descargar Excel</button></div>
+                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2>
+                    
+                    <div class="flex bg-slate-200 p-1 rounded-lg">
+                        <button onclick="window.app.setReportFilter('hoy')" id="filter-hoy" class="filter-btn active px-4 py-1 rounded-md text-sm font-semibold transition-colors">Hoy</button>
+                        <button onclick="window.app.setReportFilter('semana')" id="filter-semana" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Semana</button>
+                        <button onclick="window.app.setReportFilter('mes')" id="filter-mes" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Mes</button>
+                    </div>
+
+                    <button onclick="window.app.downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">📥 Descargar Excel</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+                        <span class="font-bold text-slate-500">Ingresos Totales (Filtro)</span>
+                        <span class="text-2xl font-black text-emerald-600" id="report-revenue">L. 0.00</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+                        <span class="font-bold text-slate-500">Costo Estimado</span>
+                        <span class="text-2xl font-black text-red-500" id="report-cost">L. 0.00</span>
+                    </div>
+                </div>
+
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><div class="chart-container"><canvas id="accountingChart"></canvas></div></div>
             </div>
 
-            <!-- 6. GUÍA LEGAL -->
-            <div id="view-guia" class="hidden"><div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto"><h2 class="text-2xl font-bold mb-4">Manual Legal SPS</h2><p class="text-slate-600 mb-6">Información de consulta.</p></div></div>
+            <div id="view-guia" class="hidden">
+                <div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-200">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-800">Guía Legal y Fiscal: San Pedro Sula</h2>
+                    <p class="text-slate-600 mb-6">Información de consulta rápida para la correcta administración del negocio frente a las autoridades hondureñas.</p>
+                    
+                    <div class="space-y-6">
+                        <div class="border-l-4 border-amber-500 pl-4 py-2 bg-amber-50 rounded-r-lg">
+                            <h4 class="font-bold text-slate-800 text-lg">1. SAR (Servicio de Administración de Rentas)</h4>
+                            <p class="text-sm text-slate-700 mt-2"><strong>Régimen de Facturación:</strong> Todo negocio debe emitir comprobantes fiscales. Es vital solicitar el CAI (Clave de Autorización de Impresión) en la oficina virtual del SAR y asegurarse de que el rango de facturación esté vigente. El ticket que se le entrega al cliente debe llevar impreso el CAI y la fecha límite de emisión.</p>
+                        </div>
+                        
+                        <div class="border-l-4 border-emerald-500 pl-4 py-2 bg-emerald-50 rounded-r-lg">
+                            <h4 class="font-bold text-slate-800 text-lg">2. Alcaldía Municipal de San Pedro Sula</h4>
+                            <p class="text-sm text-slate-700 mt-2"><strong>Permiso de Operación:</strong> Debe renovarse en el mes de Enero de cada año. El pago de impuestos municipales (Volumen de Ventas) se calcula en base a los ingresos brutos declarados del año anterior. Mantenga el permiso original visible en el local para evitar multas de los inspectores municipales.</p>
+                        </div>
+
+                        <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                            <h4 class="font-bold text-slate-800 text-lg">3. Obligaciones Contables</h4>
+                            <p class="text-sm text-slate-700 mt-2">Usa el botón "Descargar Excel" en la pestaña de Reportes al finalizar cada mes. Ese archivo contiene la relación de Ingresos y Egresos exacta que tu contador necesita para hacer las declaraciones mensuales ante el SAR de forma rápida y sin errores de digitación.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- MODAL DE COBRO -->
     <div id="modal-checkout" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-emerald-600 p-4 text-white text-center"><h3 class="font-bold text-xl">Finalizar Venta</h3></div>
             <div class="p-6 space-y-6">
-                <div class="flex justify-between items-center text-xl"><span class="text-slate-500">Total:</span><span class="font-bold text-3xl text-slate-800" id="modal-total">L. 0.00</span></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label><select id="modal-metodo" class="w-full border p-3 rounded-lg font-semibold outline-none" onchange="window.app.toggleCashInput()"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta</option></select></div>
-                <div id="cash-input-section"><label class="block text-sm font-bold text-slate-700 mb-2">Recibido (L.)</label><input type="number" id="modal-recibido" class="w-full border-2 border-emerald-500 rounded-lg p-3 text-2xl font-bold text-right outline-none" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()"><div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-lg"><span class="font-bold text-slate-600">VUELTO:</span><span class="font-bold text-2xl text-slate-400" id="modal-vuelto">L. 0.00</span></div></div>
-                <div class="flex gap-3"><button onclick="window.app.closeCheckoutModal()" class="flex-1 bg-slate-200 font-bold py-3 rounded-lg">Cancelar</button><button onclick="window.app.processSale()" id="btn-confirmar-venta" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg disabled:opacity-50" disabled>Confirmar</button></div>
+                <div class="flex justify-between items-center text-xl"><span class="text-slate-500">Total:</span><span class="font-bold text-4xl text-slate-800" id="modal-total">L. 0.00</span></div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label><select id="modal-metodo" class="w-full border p-3 rounded-lg font-semibold outline-none text-lg" onchange="window.app.toggleCashInput()"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta / Transferencia</option></select></div>
+                <div id="cash-input-section"><label class="block text-sm font-bold text-slate-700 mb-2">Efectivo Recibido (L.)</label><input type="number" id="modal-recibido" class="w-full border-2 border-emerald-500 rounded-lg p-3 text-3xl font-black text-right outline-none bg-emerald-50" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()"><div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-lg border border-slate-300"><span class="font-bold text-slate-600 text-lg">VUELTO:</span><span class="font-black text-3xl text-slate-400" id="modal-vuelto">L. 0.00</span></div></div>
+                <div class="flex gap-3"><button onclick="window.app.closeCheckoutModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-4 rounded-lg text-lg transition">Cancelar</button><button onclick="window.app.processSale()" id="btn-confirmar-venta" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-lg disabled:opacity-50 text-lg transition" disabled>Confirmar</button></div>
             </div>
         </div>
     </div>
 
-    <!-- EL SCRIPT DESACOPLADO (A PRUEBA DE FALLOS) -->
     <script>
-        // 1. INICIALIZAMOS LA INTERFAZ PRIMERO (Asegura que los menús siempre funcionen)
         let db = null;
 
         window.app = {
             state: {
                 activeView: 'dashboard', orderCounter: 1, inventory: [], cart: [], 
-                cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null
+                cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null,
+                reportFilter: 'hoy' // hoy, semana, mes
             },
 
+            // --- NAVEGACIÓN ---
             switchView(viewId) {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                 const navBtn = document.getElementById(`nav-${viewId}`);
                 if(navBtn) navBtn.classList.add('active');
                 
-                ['dashboard', 'pos', 'kds', 'inventario', 'reportes', 'guia'].forEach(id => {
+                ['dashboard', 'pos', 'kds', 'historial', 'inventario', 'reportes', 'guia'].forEach(id => {
                     document.getElementById(`view-${id}`).classList.add('hidden');
                 });
                 document.getElementById(`view-${viewId}`).classList.remove('hidden');
@@ -205,22 +205,21 @@
                 if(viewId === 'dashboard') this.updateDashboard();
                 if(viewId === 'reportes') this.renderChart();
                 if(viewId === 'kds') this.renderKDS();
+                if(viewId === 'historial') this.renderHistory();
             },
 
+            // --- POS Y CARRITO ---
             renderPOSMenu() {
                 const grid = document.getElementById('product-grid'); grid.innerHTML = '';
-                if(this.state.inventory.length === 0) {
-                    grid.innerHTML = '<div class="col-span-full text-center text-slate-500 mt-10">Base de datos vacía.</div>';
-                    return;
-                }
+                if(this.state.inventory.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-slate-500 mt-10">Base de datos vacía.</div>'; return; }
                 this.state.inventory.forEach(item => {
                     const disabled = item.stock <= 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 shadow-sm';
                     grid.innerHTML += `
                         <div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center transition-all ${disabled}">
-                            <div class="text-3xl">${item.icon || '🍲'}</div>
-                            <div class="font-bold text-sm mt-2">${item.name}</div>
-                            <div class="text-emerald-600 font-bold mt-1">L. ${item.price}</div>
-                            <div class="text-xs text-slate-400 mt-1">Stock: ${item.stock}</div>
+                            <div class="text-4xl mb-2">${item.icon || '🍲'}</div>
+                            <div class="font-bold text-sm leading-tight">${item.name}</div>
+                            <div class="text-emerald-600 font-bold mt-1 text-lg">L. ${item.price}</div>
+                            <div class="text-xs text-slate-400 mt-1 font-semibold">Quedan: ${item.stock}</div>
                         </div>`;
                 });
             },
@@ -239,6 +238,7 @@
                 this.updateCartUI();
             },
 
+            // UX MEJORADA: Cantidad Grande en el carrito
             updateCartUI() {
                 const container = document.getElementById('cart-items');
                 const btnCobrar = document.getElementById('btn-cobrar');
@@ -253,15 +253,24 @@
                 this.state.cart.forEach(item => {
                     const total = item.price * item.qty; this.state.cartTotal += total;
                     container.innerHTML += `
-                        <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center mb-2">
-                            <div><div class="font-bold text-sm">${item.name}</div><div class="text-xs">${item.qty} x L.${item.price}</div></div>
-                            <div class="flex items-center gap-3"><div class="font-bold text-emerald-600">L.${total}</div>
-                            <button onclick="window.app.removeFromCart('${item.id}')" class="text-slate-300 hover:text-red-500">✖</button></div>
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center mb-3">
+                            <div class="flex items-center">
+                                <div class="bg-emerald-100 text-emerald-800 font-black text-2xl w-12 h-12 flex justify-center items-center rounded-lg mr-4 border border-emerald-300 shadow-inner">${item.qty}</div>
+                                <div>
+                                    <div class="font-bold text-slate-800 text-lg leading-tight">${item.name}</div>
+                                    <div class="text-sm font-semibold text-slate-500">L.${item.price} c/u</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="font-black text-xl text-emerald-600">L.${total}</div>
+                                <button onclick="window.app.removeFromCart('${item.id}')" class="bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-700 w-10 h-10 rounded-full font-bold text-xl flex justify-center items-center transition">✖</button>
+                            </div>
                         </div>`;
                 });
                 document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`;
             },
 
+            // --- MODAL DE COBRO ---
             openCheckoutModal() {
                 document.getElementById('modal-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`;
                 document.getElementById('modal-recibido').value = '';
@@ -269,7 +278,6 @@
                 document.getElementById('modal-checkout').classList.remove('hidden');
                 setTimeout(() => document.getElementById('modal-recibido').focus(), 100);
             },
-            
             closeCheckoutModal() { document.getElementById('modal-checkout').classList.add('hidden'); },
 
             toggleCashInput() {
@@ -285,16 +293,16 @@
                 const display = document.getElementById('modal-vuelto');
                 const btn = document.getElementById('btn-confirmar-venta');
 
-                if (!document.getElementById('modal-recibido').value) { display.innerText = 'L. 0.00'; display.className = 'font-bold text-2xl text-slate-400'; btn.disabled = true; } 
-                else if (change >= 0) { display.innerText = `L. ${change.toFixed(2)}`; display.className = 'font-bold text-2xl text-emerald-500'; btn.disabled = false; } 
-                else { display.innerText = `Faltan L. ${Math.abs(change).toFixed(2)}`; display.className = 'font-bold text-2xl text-red-500'; btn.disabled = true; }
+                if (!document.getElementById('modal-recibido').value) { display.innerText = 'L. 0.00'; display.className = 'font-black text-3xl text-slate-400'; btn.disabled = true; } 
+                else if (change >= 0) { display.innerText = `L. ${change.toFixed(2)}`; display.className = 'font-black text-3xl text-emerald-500'; btn.disabled = false; } 
+                else { display.innerText = `Faltan L. ${Math.abs(change).toFixed(2)}`; display.className = 'font-black text-3xl text-red-500'; btn.disabled = true; }
             },
 
-            // --- OPERACIONES DE BASE DE DATOS (Protegidas) ---
+            // --- BASE DE DATOS Y FLUJO ---
             async processSale() {
-                if(!db) return alert("Base de datos desconectada. No se puede cobrar.");
+                if(!db) return alert("Error: Base de datos desconectada.");
                 const btn = document.getElementById('btn-confirmar-venta');
-                btn.disabled = true; btn.innerText = "Guardando...";
+                btn.disabled = true; btn.innerText = "Imprimiendo...";
 
                 try {
                     const batch = db.batch();
@@ -313,12 +321,11 @@
                     this.state.cart = []; this.updateCartUI(); this.closeCheckoutModal();
                     
                     const btnCobrar = document.getElementById('btn-cobrar');
-                    btnCobrar.innerText = "¡Enviado a Cocina!"; btnCobrar.classList.replace('bg-emerald-600', 'bg-blue-600');
-                    setTimeout(() => { btnCobrar.innerText = "💳 Cobrar"; btnCobrar.classList.replace('bg-blue-600', 'bg-emerald-600'); }, 2000);
+                    btnCobrar.innerText = "¡Orden Lista!"; btnCobrar.classList.replace('bg-emerald-600', 'bg-blue-600');
+                    setTimeout(() => { btnCobrar.innerText = "💳 COBRAR"; btnCobrar.classList.replace('bg-blue-600', 'bg-emerald-600'); }, 2000);
 
-                } catch (error) {
-                    console.error("Error guardando venta:", error); alert("Error al procesar el cobro.");
-                } finally { btn.innerText = "Confirmar"; btn.disabled = false; }
+                } catch (error) { console.error("Error guardando venta:", error); alert("Error al procesar la factura."); } 
+                finally { btn.innerText = "Confirmar"; btn.disabled = false; }
             },
 
             async completeOrder(orderId) {
@@ -328,141 +335,194 @@
             },
 
             async addProduct(e) {
-                e.preventDefault();
-                if(!db) return alert("Base de datos desconectada.");
-                const btn = document.getElementById('btn-save-product');
-                btn.disabled = true; btn.innerText = "Guardando...";
-
+                e.preventDefault(); if(!db) return;
+                const btn = document.getElementById('btn-save-product'); btn.disabled = true; btn.innerText = "...";
                 try {
                     await db.collection("inventory").add({
-                        name: document.getElementById('new-name').value,
-                        price: parseFloat(document.getElementById('new-price').value),
-                        cost: parseFloat(document.getElementById('new-cost').value),
-                        stock: parseInt(document.getElementById('new-stock').value), icon: '🍲'
-                    });
-                    e.target.reset();
-                } catch (error) { console.error(error); } 
-                finally { btn.disabled = false; btn.innerText = "Guardar"; }
+                        name: document.getElementById('new-name').value, price: parseFloat(document.getElementById('new-price').value),
+                        cost: parseFloat(document.getElementById('new-cost').value), stock: parseInt(document.getElementById('new-stock').value), icon: '🍲'
+                    }); e.target.reset();
+                } catch (error) { console.error(error); } finally { btn.disabled = false; btn.innerText = "Guardar"; }
             },
 
             async deleteProduct(id) {
                 if(!db) return;
-                if(confirm("¿Seguro que deseas eliminar este producto?")) {
-                    try { await db.collection("inventory").doc(id).delete(); } 
-                    catch (error) { console.error(error); }
-                }
+                if(confirm("¿Seguro que deseas eliminar el producto?")) { try { await db.collection("inventory").doc(id).delete(); } catch (error) { console.error(error); } }
             },
 
+            // --- VISTAS Y RENDERIZADO ---
             renderKDS() {
                 const grid = document.getElementById('kds-grid'); const empty = document.getElementById('kds-empty'); const badge = document.getElementById('kds-badge');
                 grid.innerHTML = ''; document.getElementById('kds-count').innerText = this.state.activeOrders.length;
-                
                 if(this.state.activeOrders.length > 0) {
-                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden');
-                    empty.classList.replace('block', 'hidden'); grid.classList.replace('hidden', 'grid');
-                    
+                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden'); empty.classList.replace('block', 'hidden'); grid.classList.replace('hidden', 'grid');
                     this.state.activeOrders.forEach(order => {
-                        let html = ''; order.items.forEach(i => html += `<div class="border-b py-2 font-semibold text-slate-700">${i.qty}x ${i.name}</div>`);
-                        grid.innerHTML += `<div class="bg-amber-50 rounded-xl shadow-md border-t-4 border-amber-400 flex flex-col"><div class="bg-amber-100 p-3 font-black text-amber-900 text-lg"><span>#${order.number}</span></div><div class="p-4 flex-1">${html}</div><button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-emerald-500 text-white font-bold py-3">✅ Marcar Listo</button></div>`;
+                        let html = ''; order.items.forEach(i => html += `<div class="border-b border-amber-200 py-3 font-bold text-slate-800 text-lg flex items-center gap-3"><span class="bg-amber-200 px-2 py-1 rounded text-amber-900">${i.qty}</span> ${i.name}</div>`);
+                        grid.innerHTML += `<div class="bg-amber-50 rounded-xl shadow-md border-t-8 border-amber-400 flex flex-col"><div class="bg-amber-100 p-4 font-black text-amber-900 text-2xl flex justify-between"><span>Orden #${order.number}</span></div><div class="p-4 flex-1">${html}</div><button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-emerald-500 hover:bg-emerald-600 transition text-white font-bold py-4 text-xl tracking-wide">✅ DESPACHAR</button></div>`;
                     });
-                } else { 
-                    badge.classList.add('hidden'); grid.classList.replace('grid', 'hidden'); empty.classList.replace('hidden', 'block');
+                } else { badge.classList.add('hidden'); grid.classList.replace('grid', 'hidden'); empty.classList.replace('hidden', 'block'); }
+            },
+
+            renderHistory() {
+                const tbody = document.getElementById('historial-tbody');
+                const empty = document.getElementById('historial-empty');
+                const container = document.getElementById('historial-container');
+                tbody.innerHTML = '';
+
+                if(this.state.salesHistory.length > 0) {
+                    empty.classList.replace('block', 'hidden');
+                    container.classList.remove('hidden');
+                    // Mostrar las más recientes primero
+                    const sortedHistory = [...this.state.salesHistory].sort((a, b) => b.dateObj - a.dateObj);
+                    
+                    sortedHistory.forEach(order => {
+                        let itemsHtml = order.items.map(i => `${i.qty}x ${i.name}`).join('<br>');
+                        let timeStr = order.dateObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
+                        let methodIcon = order.method === 'efectivo' ? '💵 Efectivo' : '💳 Tarjeta';
+
+                        tbody.innerHTML += `<tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4"><div class="font-bold text-slate-800 text-lg">#${order.number}</div><div class="text-xs text-slate-500">${timeStr}</div></td>
+                            <td class="px-6 py-4 text-sm font-semibold text-slate-700">${itemsHtml}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">${methodIcon}</td>
+                            <td class="px-6 py-4 text-right font-black text-emerald-600 text-lg">L. ${order.total.toFixed(2)}</td>
+                        </tr>`;
+                    });
+                } else {
+                    container.classList.add('hidden');
+                    empty.classList.replace('hidden', 'block');
                 }
             },
 
             renderInventory() {
                 const tbody = document.getElementById('inventory-tbody'); tbody.innerHTML = '';
-                this.state.inventory.forEach(item => {
-                    tbody.innerHTML += `<tr><td class="px-6 py-4 font-semibold">${item.icon || '🍲'} ${item.name}</td><td class="px-6 py-4">L. ${item.price.toFixed(2)}</td><td class="px-6 py-4 font-bold text-emerald-600">${item.stock}</td><td class="px-6 py-4 text-right"><button onclick="window.app.deleteProduct('${item.id}')" class="text-red-500 font-bold">✖ Eliminar</button></td></tr>`;
+                this.state.inventory.forEach(item => { tbody.innerHTML += `<tr><td class="px-6 py-4 font-semibold text-lg">${item.icon || '🍲'} ${item.name}</td><td class="px-6 py-4 font-semibold">L. ${item.price.toFixed(2)}</td><td class="px-6 py-4 font-black text-emerald-600 text-lg">${item.stock}</td><td class="px-6 py-4 text-right"><button onclick="window.app.deleteProduct('${item.id}')" class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 font-bold">Eliminar</button></td></tr>`; });
+            },
+
+            // --- FILTRADO DE FECHAS (REPORTES Y DASHBOARD) ---
+            getFilteredOrders(type) {
+                const now = new Date();
+                let startOfPeriod = new Date();
+                
+                if(type === 'hoy') { startOfPeriod.setHours(0,0,0,0); } 
+                else if(type === 'semana') {
+                    const day = startOfPeriod.getDay(); const diff = startOfPeriod.getDate() - day + (day === 0 ? -6 : 1); // Lunes
+                    startOfPeriod = new Date(startOfPeriod.setDate(diff)); startOfPeriod.setHours(0,0,0,0);
+                } 
+                else if(type === 'mes') { startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1); }
+                else { startOfPeriod = new Date(0); } // Todo
+
+                const validOrders = [];
+                [...this.state.salesHistory, ...this.state.activeOrders].forEach(order => {
+                    if(order.dateObj >= startOfPeriod) validOrders.push(order);
                 });
+                return validOrders;
             },
 
             updateDashboard() {
+                // El dashboard principal siempre muestra "Hoy"
                 let totalVentas = 0; let ordenesUnicas = new Set();
-                this.state.salesHistory.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
-                this.state.activeOrders.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
+                const ordersToday = this.getFilteredOrders('hoy');
+                
+                ordersToday.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
                 document.getElementById('dash-ventas').innerText = `L. ${totalVentas.toFixed(2)}`;
                 document.getElementById('dash-ordenes').innerText = ordenesUnicas.size;
                 document.getElementById('dash-alertas').innerText = this.state.inventory.filter(p => p.stock <= 10).length;
             },
 
+            setReportFilter(filter) {
+                this.state.reportFilter = filter;
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active', 'bg-slate-800', 'text-white');
+                    btn.classList.add('text-slate-600');
+                });
+                const activeBtn = document.getElementById(`filter-${filter}`);
+                activeBtn.classList.add('active', 'bg-slate-800', 'text-white');
+                activeBtn.classList.remove('text-slate-600');
+                this.renderChart();
+            },
+
             renderChart() {
-                const ctx = document.getElementById('accountingChart').getContext('2d'); const agg = {};
-                if(this.state.salesHistory.length === 0) { if (this.state.chartInstance) this.state.chartInstance.destroy(); return; }
-                this.state.salesHistory.forEach(order => {
+                const ctx = document.getElementById('accountingChart').getContext('2d'); 
+                const agg = {};
+                let displayRevenue = 0; let displayCost = 0;
+
+                const filteredOrders = this.getFilteredOrders(this.state.reportFilter);
+                
+                filteredOrders.forEach(order => {
                     order.items.forEach(item => {
                         if(!agg[item.name]) agg[item.name] = { revenue: 0, cost: 0 };
-                        agg[item.name].revenue += (item.price * item.qty); agg[item.name].cost += (item.cost * item.qty);
+                        const itemRev = item.price * item.qty; const itemCost = item.cost * item.qty;
+                        agg[item.name].revenue += itemRev; agg[item.name].cost += itemCost;
+                        displayRevenue += itemRev; displayCost += itemCost;
                     });
                 });
+
+                document.getElementById('report-revenue').innerText = `L. ${displayRevenue.toFixed(2)}`;
+                document.getElementById('report-cost').innerText = `L. ${displayCost.toFixed(2)}`;
+
                 const labels = Object.keys(agg); const costData = labels.map(l => agg[l].cost); const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
+                
                 if (this.state.chartInstance) this.state.chartInstance.destroy();
-                this.state.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia', data: profitData, backgroundColor: '#10b981' }, { label: 'Costo', data: costData, backgroundColor: '#f43f5e' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } });
+                if(labels.length === 0) return; // Evitar renderizar gráfico vacío
+
+                this.state.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia (L)', data: profitData, backgroundColor: '#10b981' }, { label: 'Costo (L)', data: costData, backgroundColor: '#f43f5e' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } });
             },
 
             downloadCSV() {
                 if(this.state.salesHistory.length === 0) { alert("No hay ventas para exportar."); return; }
-                let csv = "data:text/csv;charset=utf-8,Orden,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
-                this.state.salesHistory.forEach(order => { order.items.forEach(item => { csv += `${order.number},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); });
+                let csv = "data:text/csv;charset=utf-8,Orden,Fecha,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
+                this.state.salesHistory.forEach(order => { 
+                    const fechaStr = order.dateObj.toLocaleString('es-HN');
+                    order.items.forEach(item => { csv += `${order.number},${fechaStr},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); 
+                });
                 const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Reporte_SPS.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }
         };
 
-        // 2. CONECTAMOS LA BASE DE DATOS DENTRO DE UN SEGURO ANTI-FALLOS (TRY-CATCH)
+        // --- INICIALIZACIÓN ---
         window.onload = () => {
-            console.log("Iniciando aplicación...");
-            // Renderizamos los menús de forma garantizada
             window.app.renderPOSMenu();
 
             const firebaseConfig = {
-                apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA",
-                authDomain: "momb2b-3eb14.firebaseapp.com",
-                projectId: "momb2b-3eb14",
-                storageBucket: "momb2b-3eb14.firebasestorage.app",
-                messagingSenderId: "440475320328",
-                appId: "1:440475320328:web:4111a01d8e8fabbea891bd",
-                measurementId: "G-Z0BYMW1H4W"
+                apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA", authDomain: "momb2b-3eb14.firebaseapp.com",
+                projectId: "momb2b-3eb14", storageBucket: "momb2b-3eb14.firebasestorage.app",
+                messagingSenderId: "440475320328", appId: "1:440475320328:web:4111a01d8e8fabbea891bd", measurementId: "G-Z0BYMW1H4W"
             };
 
             try {
-                // Verificamos si Firebase existe en el navegador
-                if (typeof firebase === 'undefined') throw new Error("Firebase bloqueado por el navegador o adblocker.");
-                
+                if (typeof firebase === 'undefined') throw new Error("Firebase bloqueado.");
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
 
-                console.log("Conectado a Firebase exitosamente.");
-
-                // Arrancamos la lectura de datos
                 db.collection("inventory").onSnapshot((snapshot) => {
                     window.app.state.inventory = [];
                     snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
-                    window.app.renderInventory();
-                    window.app.renderPOSMenu();
-                    window.app.updateDashboard();
+                    window.app.renderInventory(); window.app.renderPOSMenu(); window.app.updateDashboard();
                 });
 
                 db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
-                    window.app.state.activeOrders = [];
-                    window.app.state.salesHistory = [];
+                    window.app.state.activeOrders = []; window.app.state.salesHistory = [];
                     snapshot.forEach((doc) => {
-                        const order = { id: doc.id, ...doc.data() };
+                        const data = doc.data();
+                        // Parsear la fecha de Firebase o usar la actual si se acaba de crear localmente
+                        const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                        const order = { id: doc.id, dateObj: dateObj, ...data };
+                        
                         if (order.status === 'preparando') window.app.state.activeOrders.push(order);
                         else if (order.status === 'listo') window.app.state.salesHistory.push(order);
                     });
+                    
                     window.app.state.orderCounter = snapshot.size + 1;
                     const orderNumDisplay = document.getElementById('pos-order-number');
                     if(orderNumDisplay) orderNumDisplay.innerText = window.app.state.orderCounter;
                     
                     window.app.renderKDS();
+                    window.app.renderHistory();
                     window.app.updateDashboard();
                     if(window.app.state.activeView === 'reportes') window.app.renderChart();
                 });
 
-            } catch (error) {
-                console.error("Fallo de Base de Datos:", error);
-                alert("Advertencia: No se pudo conectar a la Base de Datos. La navegación funcionará pero los cambios no se guardarán. (Presiona F12 para ver el error).");
-            }
+            } catch (error) { console.error("Error DB:", error); }
         };
     </script>
 </body>
