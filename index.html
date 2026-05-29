@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emprende Fácil - SPS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals with Terracotta Accents -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #fafaf9; } /* Tailwind stone-50 */
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 400px;
+            min-height: 250px;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tab-btn.active {
+            border-bottom: 2px solid #d97706; /* amber-600 */
+            color: #d97706;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col h-screen">
+
+    <header class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🍲</span>
+                <h1 class="font-bold text-xl text-stone-800">Sazón SPS Gestión</h1>
+            </div>
+            <nav class="flex space-x-1 overflow-x-auto no-scrollbar">
+                <button onclick="app.switchTab('guia')" id="tab-guia" class="tab-btn active px-3 py-2 text-sm text-stone-500 hover:text-stone-800 whitespace-nowrap">📚 Guía Formalización</button>
+                <button onclick="app.switchTab('pos')" id="tab-pos" class="tab-btn px-3 py-2 text-sm text-stone-500 hover:text-stone-800 whitespace-nowrap">🛒 Facturación</button>
+                <button onclick="app.switchTab('inventario')" id="tab-inventario" class="tab-btn px-3 py-2 text-sm text-stone-500 hover:text-stone-800 whitespace-nowrap">📦 Inventario</button>
+                <button onclick="app.switchTab('contabilidad')" id="tab-contabilidad" class="tab-btn px-3 py-2 text-sm text-stone-500 hover:text-stone-800 whitespace-nowrap">📊 Contabilidad</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 max-w-7xl mx-auto w-full">
+        
+        <!-- PESTAÑA 1: GUIA DE FORMALIZACION -->
+        <div id="view-guia" class="block">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2">Guía para Formalizar tu Negocio en San Pedro Sula</h2>
+                <p class="text-stone-600">Conoce por qué dar el paso a la formalidad te ayudará a crecer, qué responsabilidades conlleva y los pasos exactos para inscribir tu negocio de comidas.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                    <h3 class="text-xl font-semibold mb-4 text-emerald-700">✅ Ventajas de Formalizarse</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="mr-2">📈</span><span><strong>Crecimiento:</strong> Puedes venderle a empresas formales que exigen facturas con CAI.</span></li>
+                        <li class="flex items-start"><span class="mr-2">🛵</span><span><strong>Delivery:</strong> Requisito indispensable para registrarte en apps (PedidosYa, UberEats).</span></li>
+                        <li class="flex items-start"><span class="mr-2">🏦</span><span><strong>Créditos:</strong> Acceso a préstamos bancarios para pymes con mejores tasas.</span></li>
+                        <li class="flex items-start"><span class="mr-2">🛡️</span><span><strong>Protección:</strong> Proteges el nombre de tu negocio para que nadie más lo use.</span></li>
+                    </ul>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                    <h3 class="text-xl font-semibold mb-4 text-amber-700">⚖️ Obligaciones</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="mr-2">📄</span><span><strong>Facturación:</strong> Emitir facturas autorizadas por el SAR.</span></li>
+                        <li class="flex items-start"><span class="mr-2">💰</span><span><strong>Impuestos:</strong> Declaración y pago del Impuesto Sobre la Renta y/o Ventas (si aplica según régimen).</span></li>
+                        <li class="flex items-start"><span class="mr-2">🏢</span><span><strong>Alcaldía:</strong> Pago anual de volumen de ventas y permiso de operación municipal.</span></li>
+                        <li class="flex items-start"><span class="mr-2">📒</span><span><strong>Contabilidad:</strong> Llevar un registro básico de ingresos y gastos (este sistema te ayudará).</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold mb-6">Paso a Paso de Inscripción</h3>
+            <div class="space-y-4">
+                <div class="bg-white border-l-4 border-amber-500 p-4 shadow-sm rounded-r-lg">
+                    <h4 class="font-bold text-lg">1. Constitución de Comerciante Individual</h4>
+                    <p class="text-stone-600 text-sm mt-1">Lo más rápido es usar la plataforma "Mi Empresa en Línea" o ir a la Cámara de Comercio de Cortés (CCIC). Te darán un certificado o escritura pública.</p>
+                </div>
+                <div class="bg-white border-l-4 border-amber-500 p-4 shadow-sm rounded-r-lg">
+                    <h4 class="font-bold text-lg">2. Obtener el RTN (Registro Tributario Nacional)</h4>
+                    <p class="text-stone-600 text-sm mt-1">Con tu escritura, DNI y recibo de servicio público, ve a las oficinas del SAR. Te asignarán tu número de RTN empresarial de forma gratuita.</p>
+                </div>
+                <div class="bg-white border-l-4 border-amber-500 p-4 shadow-sm rounded-r-lg">
+                    <h4 class="font-bold text-lg">3. Permiso de Operación en Alcaldía (SPS)</h4>
+                    <p class="text-stone-600 text-sm mt-1">Se tramita en la Municipalidad de San Pedro Sula. Necesitarás el RTN, compatibilidad de uso de suelo (para comida), solvencia municipal y el pago de la tasa anual correspondiente.</p>
+                </div>
+                <div class="bg-white border-l-4 border-amber-500 p-4 shadow-sm rounded-r-lg">
+                    <h4 class="font-bold text-lg">4. Autorización de Imprenta (CAI)</h4>
+                    <p class="text-stone-600 text-sm mt-1">Ingresa a la Oficina Virtual del SAR con tu clave para solicitar permisos de impresión de facturas y llévalo a una imprenta autorizada.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: PUNTO DE VENTA (FACTURACION) -->
+        <div id="view-pos" class="hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold">Punto de Venta (Facturación)</h2>
+                <p class="text-stone-600 text-sm">Selecciona los productos para agregarlos a la cuenta. Al cobrar, se descontarán del inventario automáticamente.</p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-2/3">
+                    <div class="bg-white p-4 rounded-xl shadow-sm h-[60vh] overflow-y-auto">
+                        <h3 class="font-semibold mb-4 text-stone-500 uppercase text-xs tracking-wider">Menú</h3>
+                        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <!-- Inyectado por JS -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lg:w-1/3">
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col h-[60vh]">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-stone-500 uppercase text-xs tracking-wider">Cuenta Actual</h3>
+                            <span id="order-number-display" class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">Orden #1</span>
+                        </div>
+                        <div id="cart-items" class="flex-1 overflow-y-auto space-y-3 mb-4">
+                            <!-- Inyectado por JS -->
+                            <div class="text-center text-stone-400 mt-10" id="empty-cart-msg">No hay productos en la orden</div>
+                        </div>
+                        <div class="border-t border-stone-200 pt-4">
+                            <div class="flex justify-between font-bold text-xl mb-4">
+                                <span>Total:</span>
+                                <span id="cart-total">L. 0.00</span>
+                            </div>
+                            <button onclick="window.app.checkout()" id="btn-cobrar" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50" disabled>
+                                💳 Cobrar Factura
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: CONTROL DE INVENTARIO -->
+        <div id="view-inventario" class="hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold">Control de Inventario</h2>
+                <p class="text-stone-600 text-sm">Monitorea los ingredientes o platillos. Se actualiza cada vez que realizas una venta en Facturación.</p>
+            </div>
+
+            <!-- Formulario para agregar productos -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 mb-6">
+                <h3 class="font-bold text-stone-700 mb-3">➕ Agregar Nuevo Producto</h3>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <div class="col-span-2 md:col-span-2">
+                        <input type="text" id="new-prod-name" placeholder="Ej. Refresco Lata" class="w-full border border-stone-300 rounded-lg p-2 text-sm focus:ring-amber-500 focus:border-amber-500 outline-none">
+                    </div>
+                    <div class="col-span-1">
+                        <input type="number" id="new-prod-price" placeholder="Precio Venta" class="w-full border border-stone-300 rounded-lg p-2 text-sm focus:ring-amber-500 outline-none">
+                    </div>
+                    <div class="col-span-1">
+                        <input type="number" id="new-prod-cost" placeholder="Costo" class="w-full border border-stone-300 rounded-lg p-2 text-sm focus:ring-amber-500 outline-none">
+                    </div>
+                    <div class="col-span-1">
+                        <input type="number" id="new-prod-stock" placeholder="Stock" class="w-full border border-stone-300 rounded-lg p-2 text-sm focus:ring-amber-500 outline-none">
+                    </div>
+                    <div class="col-span-1">
+                        <button onclick="app.addNewProduct()" id="btn-add-prod" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-semibold rounded-lg p-2 text-sm transition-colors">Guardar</button>
+                    </div>
+                </div>
+                <p id="add-prod-error" class="text-red-500 text-xs mt-2 hidden">Por favor llena todos los campos correctamente.</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full divide-y divide-stone-200">
+                    <thead class="bg-stone-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Producto</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Precio Venta (L)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Costo (L)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Stock Disponible</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody" class="bg-white divide-y divide-stone-200">
+                        <!-- Inyectado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 4: CONTABILIDAD -->
+        <div id="view-contabilidad" class="hidden">
+            <div class="mb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold">Resumen Contable (Automático)</h2>
+                    <p class="text-stone-600 text-sm">Los números se calculan solos en base a las ventas. La Ganancia es: Ventas - Costo de los productos vendidos.</p>
+                </div>
+                <button id="btn-export-sar" onclick="app.exportSARReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 text-sm transition-colors whitespace-nowrap">
+                    <span>📄 Descargar Libro Ingresos/Egresos (SAR)</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <p class="text-stone-500 text-sm font-semibold uppercase">Total Ingresos</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-2" id="metric-ingresos">L. 0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
+                    <p class="text-stone-500 text-sm font-semibold uppercase">Costo de Ventas</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-2" id="metric-costos">L. 0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                    <p class="text-stone-500 text-sm font-semibold uppercase">Ganancia Bruta</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-2" id="metric-ganancia">L. 0.00</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="font-bold text-lg mb-4 text-stone-700">Rendimiento por Producto</h3>
+                <div class="chart-container">
+                    <canvas id="accountingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FIREBASE SDKS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ⚠️ REEMPLAZA ESTO CON TUS PROPIAS CREDENCIALES DE FIREBASE (PASO 1 DE LA GUÍA)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA",
+            authDomain: "momb2b-3eb14.firebaseapp.com",
+            projectId: "momb2b-3eb14",
+            storageBucket: "momb2b-3eb14.appspot.com",
+            messagingSenderId: "440475320328",
+            appId: "1:440475320328:web:4111a01d8e8fabbea891bd""
+        };
+
+        // Nombre de identificación de la app en la base de datos
+        const appId = 'sps-gestion-app';
+
+        // Inicialización de Firebase
+        const appFirebase = initializeApp(firebaseConfig);
+        const auth = getAuth(appFirebase);
+        const db = getFirestore(appFirebase);
+        let userId = null;
+
+        // Declaramos el objeto 'app' en el objeto global (window) para que el HTML pueda ejecutar las funciones
+        window.app = {
+            state: {
+                activeTab: 'guia',
+                orderNumber: 1,
+                inventory: [], 
+                cart: [],
+                salesHistory: [],
+                chartInstance: null,
+                isLoaded: false
+            },
+
+            async init() {
+                try {
+                    // Autenticación Anónima Silenciosa para tu mamá
+                    await signInAnonymously(auth);
+                    userId = auth.currentUser?.uid;
+
+                    if (!userId) {
+                        console.error("No se pudo obtener el ID de usuario.");
+                        return;
+                    }
+
+                    // Conectar la base de datos en tiempo real
+                    this.setupListeners();
+                } catch(e) {
+                    console.error("Error al conectar a la nube Firebase. Revisa tus credenciales en el código:", e);
+                }
+            },
+
+            // Direcciones para guardar los datos específicos de tu mamá de forma privada
+            getInventoryRef() { return collection(db, 'artifacts', appId, 'users', userId, 'inventory'); },
+            getSalesRef() { return collection(db, 'artifacts', appId, 'users', userId, 'salesHistory'); },
+            getConfigDoc() { return doc(db, 'artifacts', appId, 'users', userId, 'config', 'main'); },
+
+            setupListeners() {
+                
+                // 1. Escuchar Número de Orden actual
+                onSnapshot(this.getConfigDoc(), (docSnap) => {
+                    if (docSnap.exists()) {
+                        this.state.orderNumber = docSnap.data().orderNumber || 1;
+                    } else {
+                        setDoc(this.getConfigDoc(), { orderNumber: 1 });
+                        this.state.orderNumber = 1;
+                    }
+                    this.updateCartUI();
+                }, (error) => console.error("Error leyendo configuración:", error));
+
+                // 2. Escuchar Inventario en tiempo real
+                onSnapshot(this.getInventoryRef(), async (snapshot) => {
+                    if (snapshot.empty && !this.state.isLoaded) {
+                        // Si la base de datos está totalmente vacía de inicio, sembramos comida típica hondureña
+                        const defaultItems = [
+                            { name: 'Baleada Sencilla', price: 25, cost: 10, stock: 50, icon: '🌮' },
+                            { name: 'Baleada Especial', price: 45, cost: 22, stock: 35, icon: '🌮' },
+                            { name: 'Pollo con Tajadas', price: 120, cost: 65, stock: 20, icon: '🍗' },
+                            { name: 'Tacos Catrachos', price: 70, cost: 35, stock: 25, icon: '🌮' },
+                            { name: 'Sopa de Caracol', price: 180, cost: 90, stock: 10, icon: '🥣' },
+                            { name: 'Refresco Botella', price: 20, cost: 12, stock: 80, icon: '🥤' },
+                            { name: 'Horchata', price: 25, cost: 8, stock: 40, icon: '🥛' }
+                        ];
+                        for (const item of defaultItems) {
+                            await addDoc(this.getInventoryRef(), item);
+                        }
+                        this.state.isLoaded = true;
+                        return;
+                    }
+                    
+                    this.state.inventory = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    // Ordenar visualmente
+                    this.state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+                    this.state.isLoaded = true;
+                    
+                    this.renderPOSMenu();
+                    this.renderInventory();
+                    
+                    // Limpiar carrito si un producto se agota por otro dispositivo simultáneamente
+                    this.state.cart = this.state.cart.filter(cartItem => {
+                        const invItem = this.state.inventory.find(i => i.id === cartItem.id);
+                        return invItem && invItem.stock >= cartItem.qty;
+                    });
+                    this.updateCartUI();
+                }, (error) => console.error("Error leyendo inventario:", error));
+
+                // 3. Escuchar Ventas para la Contabilidad
+                onSnapshot(this.getSalesRef(), (snapshot) => {
+                    this.state.salesHistory = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    this.calculateMetrics();
+                    if(this.state.activeTab === 'contabilidad') {
+                        this.renderChart();
+                    }
+                }, (error) => console.error("Error leyendo historial contable:", error));
+            },
+
+            switchTab(tabId) {
+                ['guia', 'pos', 'inventario', 'contabilidad'].forEach(id => {
+                    document.getElementById(`view-${id}`).classList.add('hidden');
+                    document.getElementById(`tab-${id}`).classList.remove('active');
+                });
+                
+                document.getElementById(`view-${tabId}`).classList.remove('hidden');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+                this.state.activeTab = tabId;
+
+                if(tabId === 'contabilidad') {
+                    this.renderChart();
+                }
+            },
+
+            // --- PUNTO DE VENTA (POS) ---
+            renderPOSMenu() {
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = '';
+                this.state.inventory.forEach(item => {
+                    const disabled = item.stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 hover:shadow-md';
+                    grid.innerHTML += `
+                        <div onclick="window.app.addToCart('${item.id}')" class="bg-stone-50 border border-stone-200 p-4 rounded-xl text-center transition-all select-none ${disabled}">
+                            <div class="text-3xl mb-2">${item.icon}</div>
+                            <div class="font-bold text-sm text-slate-700 leading-tight">${item.name}</div>
+                            <div class="text-amber-700 font-semibold mt-1">L. ${item.price}</div>
+                            <div class="text-xs text-stone-400 mt-1">Stock: ${item.stock}</div>
+                        </div>
+                    `;
+                });
+            },
+
+            addToCart(productId) {
+                const product = this.state.inventory.find(p => p.id === productId);
+                if (!product || product.stock <= 0) return;
+
+                const existingItem = this.state.cart.find(c => c.id === productId);
+                if (existingItem) {
+                    if(existingItem.qty < product.stock) {
+                        existingItem.qty++;
+                    } else {
+                        const btn = document.getElementById('btn-cobrar');
+                        const oldText = btn.innerText;
+                        btn.innerText = "Stock máximo alcanzado";
+                        btn.classList.replace('bg-amber-600', 'bg-red-500');
+                        setTimeout(() => {
+                            btn.innerText = oldText;
+                            btn.classList.replace('bg-red-500', 'bg-amber-600');
+                        }, 2000);
+                        return;
+                    }
+                } else {
+                    this.state.cart.push({ ...product, qty: 1 });
+                }
+                this.updateCartUI();
+            },
+
+            removeFromCart(productId) {
+                this.state.cart = this.state.cart.filter(c => c.id !== productId);
+                this.updateCartUI();
+            },
+
+            updateCartUI() {
+                const cartContainer = document.getElementById('cart-items');
+                const totalEl = document.getElementById('cart-total');
+                const btnCobrar = document.getElementById('btn-cobrar');
+                const orderDisplay = document.getElementById('order-number-display');
+
+                if(orderDisplay) orderDisplay.innerText = `Orden #${this.state.orderNumber}`;
+
+                cartContainer.innerHTML = '';
+                let total = 0;
+
+                if (this.state.cart.length === 0) {
+                    cartContainer.innerHTML = '<div class="text-center text-stone-400 mt-10" id="empty-cart-msg">No hay productos en la orden</div>';
+                    btnCobrar.disabled = true;
+                } else {
+                    btnCobrar.disabled = false;
+                    
+                    this.state.cart.forEach(item => {
+                        const itemTotal = item.price * item.qty;
+                        total += itemTotal;
+                        cartContainer.innerHTML += `
+                            <div class="flex justify-between items-center bg-stone-50 p-2 rounded-lg border border-stone-200">
+                                <div class="flex-1">
+                                    <div class="text-sm font-semibold">${item.name}</div>
+                                    <div class="text-xs text-stone-500">${item.qty} x L.${item.price}</div>
+                                </div>
+                                <div class="font-bold text-sm mr-3">L.${itemTotal}</div>
+                                <button onclick="window.app.removeFromCart('${item.id}')" class="text-red-400 hover:text-red-600">❌</button>
+                            </div>
+                        `;
+                    });
+                }
+                totalEl.innerText = `L. ${total.toFixed(2)}`;
+            },
+
+            async checkout() {
+                if(this.state.cart.length === 0 || !userId) return;
+
+                const btn = document.getElementById('btn-cobrar');
+                btn.disabled = true;
+                btn.innerText = "Procesando...";
+
+                try {
+                    const currentDate = new Date().toLocaleDateString('es-HN'); 
+                    
+                    for (const cartItem of this.state.cart) {
+                        const invItem = this.state.inventory.find(p => p.id === cartItem.id);
+                        if (invItem) {
+                            // Descontar inventario en la nube
+                            const newStock = invItem.stock - cartItem.qty;
+                            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'inventory', cartItem.id);
+                            await updateDoc(docRef, { stock: newStock });
+                        }
+                        
+                        // Guardar la venta en la nube
+                        await addDoc(this.getSalesRef(), {
+                            orderId: this.state.orderNumber,
+                            date: currentDate,
+                            productId: cartItem.id,
+                            name: cartItem.name,
+                            qty: cartItem.qty,
+                            revenue: cartItem.price * cartItem.qty,
+                            cost: cartItem.cost * cartItem.qty
+                        });
+                    }
+
+                    // Avanzar número de orden en la nube
+                    await updateDoc(this.getConfigDoc(), { orderNumber: this.state.orderNumber + 1 });
+
+                    this.state.cart = [];
+                    this.updateCartUI();
+                    
+                    btn.innerText = "¡Facturado con éxito!";
+                    btn.classList.replace('bg-amber-600', 'bg-green-600');
+                    setTimeout(() => {
+                        btn.innerText = "💳 Cobrar Factura";
+                        btn.classList.replace('bg-green-600', 'bg-amber-600');
+                        btn.disabled = true;
+                    }, 2000);
+                } catch(e) {
+                    console.error("Error durante el cobro:", e);
+                    btn.innerText = "Error, intenta de nuevo";
+                    setTimeout(() => {
+                        this.updateCartUI(); 
+                    }, 2000);
+                }
+            },
+
+            // --- CONTROL DE INVENTARIO ---
+            async addNewProduct() {
+                const name = document.getElementById('new-prod-name').value;
+                const price = parseFloat(document.getElementById('new-prod-price').value);
+                const cost = parseFloat(document.getElementById('new-prod-cost').value);
+                const stock = parseInt(document.getElementById('new-prod-stock').value);
+                const errorMsg = document.getElementById('add-prod-error');
+                const btn = document.getElementById('btn-add-prod');
+
+                if (!name || isNaN(price) || isNaN(cost) || isNaN(stock) || !userId) {
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+                
+                errorMsg.classList.add('hidden');
+                btn.disabled = true;
+                btn.innerText = "Guardando...";
+
+                try {
+                    await addDoc(this.getInventoryRef(), {
+                        name: name,
+                        price: price,
+                        cost: cost,
+                        stock: stock,
+                        icon: '📦'
+                    });
+
+                    // Limpiar formulario
+                    document.getElementById('new-prod-name').value = '';
+                    document.getElementById('new-prod-price').value = '';
+                    document.getElementById('new-prod-cost').value = '';
+                    document.getElementById('new-prod-stock').value = '';
+
+                    btn.innerText = "¡Agregado!";
+                    btn.classList.replace('bg-stone-800', 'bg-green-600');
+                    setTimeout(() => {
+                        btn.innerText = "Guardar";
+                        btn.classList.replace('bg-green-600', 'bg-stone-800');
+                        btn.disabled = false;
+                    }, 2000);
+                } catch(e) {
+                    console.error("Error al agregar producto:", e);
+                    btn.innerText = "Error";
+                    setTimeout(() => {
+                        btn.innerText = "Guardar";
+                        btn.disabled = false;
+                    }, 2000);
+                }
+            },
+
+            renderInventory() {
+                const tbody = document.getElementById('inventory-tbody');
+                tbody.innerHTML = '';
+                
+                this.state.inventory.forEach(item => {
+                    let statusBadge = '';
+                    if (item.stock > 20) {
+                        statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Óptimo</span>';
+                    } else if (item.stock > 0) {
+                        statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Bajo</span>';
+                    } else {
+                        statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Agotado</span>';
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">${item.icon} ${item.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">L. ${item.price.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">L. ${item.cost.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-900 font-bold">${item.stock}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                        </tr>
+                    `;
+                });
+            },
+
+            // --- CONTABILIDAD Y EXPORTACIÓN ---
+            exportSARReport() {
+                if (this.state.salesHistory.length === 0) {
+                    const btn = document.getElementById('btn-export-sar');
+                    const oldText = btn.innerHTML;
+                    btn.innerHTML = "<span>Sin ventas para exportar</span>";
+                    btn.classList.replace('bg-emerald-600', 'bg-gray-500');
+                    setTimeout(() => {
+                        btn.innerHTML = oldText;
+                        btn.classList.replace('bg-gray-500', 'bg-emerald-600');
+                    }, 3000);
+                    return;
+                }
+
+                // Ordenar por ID de orden cronológicamente
+                const sortedSales = [...this.state.salesHistory].sort((a, b) => a.orderId - b.orderId);
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Fecha,No. Orden,Concepto/Producto,Ingresos (L),Egresos/Costo (L)\n";
+
+                let totalIngresos = 0;
+                let totalEgresos = 0;
+
+                sortedSales.forEach(sale => {
+                    const row = [
+                        sale.date,
+                        sale.orderId,
+                        `Venta: ${sale.qty}x ${sale.name}`,
+                        sale.revenue.toFixed(2),
+                        sale.cost.toFixed(2)
+                    ].join(",");
+                    csvContent += row + "\n";
+                    
+                    totalIngresos += sale.revenue;
+                    totalEgresos += sale.cost;
+                });
+
+                csvContent += `\nTOTALES,,-,${totalIngresos.toFixed(2)},${totalEgresos.toFixed(2)}\n`;
+                csvContent += `GANANCIA NETA,,-,${(totalIngresos - totalEgresos).toFixed(2)},-\n`;
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Libro_Ingresos_Egresos_SAR_${new Date().toLocaleDateString('es-HN').replace(/\//g, '-')}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+
+            calculateMetrics() {
+                let totalIngresos = 0;
+                let totalCostos = 0;
+
+                this.state.salesHistory.forEach(sale => {
+                    totalIngresos += sale.revenue;
+                    totalCostos += sale.cost;
+                });
+
+                const ganancia = totalIngresos - totalCostos;
+
+                document.getElementById('metric-ingresos').innerText = `L. ${totalIngresos.toFixed(2)}`;
+                document.getElementById('metric-costos').innerText = `L. ${totalCostos.toFixed(2)}`;
+                document.getElementById('metric-ganancia').innerText = `L. ${ganancia.toFixed(2)}`;
+            },
+
+            renderChart() {
+                const ctx = document.getElementById('accountingChart').getContext('2d');
+                
+                const agg = {};
+                this.state.inventory.forEach(p => agg[p.name] = { revenue: 0, cost: 0 });
+                
+                this.state.salesHistory.forEach(sale => {
+                    if(!agg[sale.name]) agg[sale.name] = { revenue: 0, cost: 0 };
+                    agg[sale.name].revenue += sale.revenue;
+                    agg[sale.name].cost += sale.cost;
+                });
+
+                const labels = Object.keys(agg);
+                const costData = labels.map(l => agg[l].cost);
+                const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
+
+                if (this.state.chartInstance) {
+                    this.state.chartInstance.destroy();
+                }
+
+                this.state.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Ganancia Neta (L)',
+                                data: profitData,
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Costo (L)',
+                                data: costData,
+                                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true, beginAtZero: true }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.y !== null) {
+                                            label += 'L. ' + context.parsed.y.toFixed(2);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        window.addEventListener('load', () => {
+            window.app.init();
+        });
+    </script>
+</body>
+</html>
