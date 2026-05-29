@@ -265,7 +265,12 @@
 
                 if(viewId === 'dashboard') this.updateDashboard();
                 if(viewId === 'reportes') this.renderChart();
-                if(viewId === 'kds') this.renderKDS();
+                
+                // ¡AQUÍ ESTÁ LA MAGIA! Obligamos a renderizar KDS cada vez que se entra a la vista
+                if(viewId === 'kds') {
+                    console.log("🔥 Entrando a KDS. Órdenes activas: ", this.state.activeOrders.length);
+                    this.renderKDS();
+                }
             },
 
             renderPOSMenu() {
