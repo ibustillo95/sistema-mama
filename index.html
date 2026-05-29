@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sazón SPS - ERP</title>
     
+    <!-- Tailwind y ChartJS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Librerías de Firebase v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -26,6 +28,7 @@
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800">
 
+    <!-- SIDEBAR -->
     <aside class="w-64 bg-slate-900 flex flex-col shadow-xl z-20 hidden md:flex">
         <div class="p-6 flex items-center gap-3 border-b border-slate-800">
             <span class="text-3xl">🍲</span>
@@ -59,6 +62,7 @@
         </nav>
     </aside>
 
+    <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 h-screen overflow-y-auto relative">
         <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
             <div class="font-bold text-lg">🍲 Sazón SPS</div>
@@ -73,7 +77,7 @@
         </header>
 
         <div class="p-4 md:p-8 max-w-7xl mx-auto">
-
+            <!-- 1. DASHBOARD -->
             <div id="view-dashboard" class="block animate-fade-in">
                 <h2 class="text-2xl font-bold mb-6 text-slate-800">Resumen del Día</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -92,6 +96,7 @@
                 </div>
             </div>
 
+            <!-- 2. PUNTO DE VENTA (POS) -->
             <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
                 <div class="flex flex-col lg:flex-row gap-6 h-full">
                     <div class="lg:w-2/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
@@ -118,174 +123,72 @@
                 </div>
             </div>
 
+            <!-- 3. KDS (Cocina) -->
             <div id="view-kds" class="hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2>
                     <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span>
                 </div>
-                
                 <div id="kds-empty" class="text-center text-slate-400 py-20 block">
                     <span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes en este momento.
                 </div>
-                
-                <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden">
-                </div>
+                <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
             </div>
 
+            <!-- 4. INVENTARIO -->
             <div id="view-inventario" class="hidden">
                 <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Gestión de Inventario</h2></div>
-                
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
                     <h3 class="font-bold text-slate-700 mb-4">➕ Agregar Producto</h3>
                     <form onsubmit="window.app.addProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nombre</label>
-                            <input type="text" id="new-name" required class="w-full border border-slate-300 rounded p-2 outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Precio (L)</label>
-                            <input type="number" id="new-price" required min="1" step="0.5" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Costo (L)</label>
-                            <input type="number" id="new-cost" required min="0" step="0.5" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stock</label>
-                            <input type="number" id="new-stock" required min="0" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
-                        </div>
-                        <div class="md:col-span-5 flex justify-end mt-2">
-                            <button type="submit" id="btn-save-product" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700">Guardar</button>
-                        </div>
+                        <div class="md:col-span-2"><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nombre</label><input type="text" id="new-name" required class="w-full border border-slate-300 rounded p-2 outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Precio (L)</label><input type="number" id="new-price" required min="1" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Costo (L)</label><input type="number" id="new-cost" required min="0" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stock</label><input type="number" id="new-stock" required min="0" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                        <div class="md:col-span-5 flex justify-end mt-2"><button type="submit" id="btn-save-product" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700">Guardar</button></div>
                     </form>
                 </div>
-
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Producto</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Precio</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Stock</th>
-                                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acción</th>
-                            </tr>
-                        </thead>
+                        <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Producto</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Precio</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Stock</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acción</th></tr></thead>
                         <tbody id="inventory-tbody" class="bg-white divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- 5. REPORTES -->
             <div id="view-reportes" class="hidden">
-                <div class="mb-6 flex justify-between items-center">
-                    <h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2>
-                    <button onclick="window.app.downloadCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">
-                        📥 Descargar Excel (SAR)
-                    </button>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="chart-container"><canvas id="accountingChart"></canvas></div>
-                </div>
+                <div class="mb-6 flex justify-between items-center"><h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2><button onclick="window.app.downloadCSV()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">📥 Descargar Excel</button></div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><div class="chart-container"><canvas id="accountingChart"></canvas></div></div>
             </div>
 
-            <div id="view-guia" class="hidden">
-                <div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto">
-                    <h2 class="text-2xl font-bold mb-4">Manual Legal SPS</h2>
-                    <p class="text-slate-600 mb-6">Información de consulta para la administración del negocio.</p>
-                </div>
-            </div>
+            <!-- 6. GUÍA LEGAL -->
+            <div id="view-guia" class="hidden"><div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto"><h2 class="text-2xl font-bold mb-4">Manual Legal SPS</h2><p class="text-slate-600 mb-6">Información de consulta.</p></div></div>
         </div>
     </main>
 
+    <!-- MODAL DE COBRO -->
     <div id="modal-checkout" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-emerald-600 p-4 text-white text-center"><h3 class="font-bold text-xl">Finalizar Venta</h3></div>
             <div class="p-6 space-y-6">
                 <div class="flex justify-between items-center text-xl"><span class="text-slate-500">Total:</span><span class="font-bold text-3xl text-slate-800" id="modal-total">L. 0.00</span></div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label>
-                    <select id="modal-metodo" class="w-full border p-3 rounded-lg font-semibold outline-none" onchange="window.app.toggleCashInput()">
-                        <option value="efectivo">💵 Efectivo</option>
-                        <option value="tarjeta">💳 Tarjeta / POS</option>
-                    </select>
-                </div>
-                <div id="cash-input-section">
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Efectivo Recibido (L.)</label>
-                    <input type="number" id="modal-recibido" placeholder="0.00" class="w-full border-2 border-emerald-500 rounded-lg p-3 text-2xl font-bold text-right outline-none" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()">
-                    <div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-lg"><span class="font-bold text-slate-600">VUELTO:</span><span class="font-bold text-2xl text-slate-400" id="modal-vuelto">L. 0.00</span></div>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="window.app.closeCheckoutModal()" class="flex-1 bg-slate-200 font-bold py-3 rounded-lg">Cancelar</button>
-                    <button onclick="window.app.processSale()" id="btn-confirmar-venta" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg disabled:opacity-50" disabled>Confirmar</button>
-                </div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label><select id="modal-metodo" class="w-full border p-3 rounded-lg font-semibold outline-none" onchange="window.app.toggleCashInput()"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta</option></select></div>
+                <div id="cash-input-section"><label class="block text-sm font-bold text-slate-700 mb-2">Recibido (L.)</label><input type="number" id="modal-recibido" class="w-full border-2 border-emerald-500 rounded-lg p-3 text-2xl font-bold text-right outline-none" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()"><div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-lg"><span class="font-bold text-slate-600">VUELTO:</span><span class="font-bold text-2xl text-slate-400" id="modal-vuelto">L. 0.00</span></div></div>
+                <div class="flex gap-3"><button onclick="window.app.closeCheckoutModal()" class="flex-1 bg-slate-200 font-bold py-3 rounded-lg">Cancelar</button><button onclick="window.app.processSale()" id="btn-confirmar-venta" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg disabled:opacity-50" disabled>Confirmar</button></div>
             </div>
         </div>
     </div>
 
+    <!-- EL SCRIPT DESACOPLADO (A PRUEBA DE FALLOS) -->
     <script>
-        // --- 1. CONFIGURACIÓN FIREBASE NUBE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA",
-            authDomain: "momb2b-3eb14.firebaseapp.com",
-            projectId: "momb2b-3eb14",
-            storageBucket: "momb2b-3eb14.firebasestorage.app",
-            messagingSenderId: "440475320328",
-            appId: "1:440475320328:web:4111a01d8e8fabbea891bd",
-            measurementId: "G-Z0BYMW1H4W"
-        };
+        // 1. INICIALIZAMOS LA INTERFAZ PRIMERO (Asegura que los menús siempre funcionen)
+        let db = null;
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-
-        // --- 2. LÓGICA DE APLICACIÓN ---
         window.app = {
             state: {
-                activeView: 'dashboard',
-                orderCounter: 1,
-                inventory: [],
-                cart: [], cartTotal: 0, 
-                activeOrders: [], 
-                salesHistory: [], 
-                chartInstance: null
-            },
-
-            init() { 
-                console.log("Conectando a base de datos Firebase...");
-                
-                // Escuchar Inventario (Tiempo real)
-                db.collection("inventory").onSnapshot((snapshot) => {
-                    this.state.inventory = [];
-                    snapshot.forEach((doc) => {
-                        this.state.inventory.push({ id: doc.id, ...doc.data() });
-                    });
-                    this.renderInventory();
-                    this.renderPOSMenu();
-                    this.updateDashboard();
-                });
-
-                // Escuchar Órdenes (Tiempo real para Cocina y Reportes)
-                db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
-                    this.state.activeOrders = [];
-                    this.state.salesHistory = [];
-
-                    snapshot.forEach((doc) => {
-                        const order = { id: doc.id, ...doc.data() };
-                        if (order.status === 'preparando') {
-                            this.state.activeOrders.push(order);
-                        } else if (order.status === 'listo') {
-                            this.state.salesHistory.push(order);
-                        }
-                    });
-
-                    this.state.orderCounter = snapshot.size + 1;
-                    const orderNumDisplay = document.getElementById('pos-order-number');
-                    if(orderNumDisplay) orderNumDisplay.innerText = this.state.orderCounter;
-
-                    this.renderKDS();
-                    this.updateDashboard();
-                    if(this.state.activeView === 'reportes') this.renderChart();
-                });
+                activeView: 'dashboard', orderCounter: 1, inventory: [], cart: [], 
+                cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null
             },
 
             switchView(viewId) {
@@ -307,15 +210,15 @@
             renderPOSMenu() {
                 const grid = document.getElementById('product-grid'); grid.innerHTML = '';
                 if(this.state.inventory.length === 0) {
-                    grid.innerHTML = '<div class="col-span-full text-center text-slate-500 mt-10">Base de datos vacía. Agrega productos en Inventario.</div>';
+                    grid.innerHTML = '<div class="col-span-full text-center text-slate-500 mt-10">Base de datos vacía.</div>';
                     return;
                 }
                 this.state.inventory.forEach(item => {
-                    const disabled = item.stock <= 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 hover:shadow-md';
+                    const disabled = item.stock <= 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 shadow-sm';
                     grid.innerHTML += `
-                        <div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center transition-all select-none ${disabled}">
+                        <div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center transition-all ${disabled}">
                             <div class="text-3xl">${item.icon || '🍲'}</div>
-                            <div class="font-bold text-sm leading-tight mt-2">${item.name}</div>
+                            <div class="font-bold text-sm mt-2">${item.name}</div>
                             <div class="text-emerald-600 font-bold mt-1">L. ${item.price}</div>
                             <div class="text-xs text-slate-400 mt-1">Stock: ${item.stock}</div>
                         </div>`;
@@ -342,7 +245,7 @@
                 container.innerHTML = ''; this.state.cartTotal = 0;
 
                 if (this.state.cart.length === 0) {
-                    container.innerHTML = '<div class="text-center text-slate-400 mt-10">La orden está vacía</div>';
+                    container.innerHTML = '<div class="text-center text-slate-400 mt-10">Orden vacía</div>';
                     btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return;
                 }
 
@@ -387,67 +290,180 @@
                 else { display.innerText = `Faltan L. ${Math.abs(change).toFixed(2)}`; display.className = 'font-bold text-2xl text-red-500'; btn.disabled = true; }
             },
 
-            // --- LÓGICA DE FIREBASE (ESCRITURA) ---
+            // --- OPERACIONES DE BASE DE DATOS (Protegidas) ---
             async processSale() {
+                if(!db) return alert("Base de datos desconectada. No se puede cobrar.");
                 const btn = document.getElementById('btn-confirmar-venta');
-                btn.disabled = true;
-                btn.innerText = "Guardando...";
+                btn.disabled = true; btn.innerText = "Guardando...";
 
                 try {
                     const batch = db.batch();
-
-                    // 1. Descontar Inventario
-                    this.state.cart.forEach(cartItem => {
-                        const invRef = db.collection("inventory").doc(cartItem.id);
-                        batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(-cartItem.qty) });
+                    this.state.cart.forEach(c => {
+                        const invRef = db.collection("inventory").doc(c.id);
+                        batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(-c.qty) });
                     });
-
-                    // 2. Crear Orden en DB
                     const orderRef = db.collection("orders").doc();
                     batch.set(orderRef, {
-                        number: this.state.orderCounter,
-                        items: this.state.cart,
-                        total: this.state.cartTotal,
-                        status: 'preparando',
-                        method: document.getElementById('modal-metodo').value,
+                        number: this.state.orderCounter, items: this.state.cart, total: this.state.cartTotal,
+                        status: 'preparando', method: document.getElementById('modal-metodo').value,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
                     await batch.commit();
-
-                    // Limpiar UI
-                    this.state.cart = [];
-                    this.updateCartUI(); 
-                    this.closeCheckoutModal();
+                    this.state.cart = []; this.updateCartUI(); this.closeCheckoutModal();
                     
                     const btnCobrar = document.getElementById('btn-cobrar');
-                    btnCobrar.innerText = "¡Enviado a Cocina!"; 
-                    btnCobrar.classList.replace('bg-emerald-600', 'bg-blue-600');
+                    btnCobrar.innerText = "¡Enviado a Cocina!"; btnCobrar.classList.replace('bg-emerald-600', 'bg-blue-600');
                     setTimeout(() => { btnCobrar.innerText = "💳 Cobrar"; btnCobrar.classList.replace('bg-blue-600', 'bg-emerald-600'); }, 2000);
 
                 } catch (error) {
-                    console.error("Error guardando venta:", error);
-                    alert("Error al conectar con la base de datos.");
-                } finally {
-                    btn.innerText = "Confirmar";
-                    btn.disabled = false;
-                }
+                    console.error("Error guardando venta:", error); alert("Error al procesar el cobro.");
+                } finally { btn.innerText = "Confirmar"; btn.disabled = false; }
             },
 
             async completeOrder(orderId) {
-                try {
-                    await db.collection("orders").doc(orderId).update({ status: 'listo' });
-                } catch (error) {
-                    console.error("Error actualizando orden:", error);
-                }
+                if(!db) return;
+                try { await db.collection("orders").doc(orderId).update({ status: 'listo' }); } 
+                catch (error) { console.error("Error:", error); }
             },
 
             async addProduct(e) {
                 e.preventDefault();
+                if(!db) return alert("Base de datos desconectada.");
                 const btn = document.getElementById('btn-save-product');
                 btn.disabled = true; btn.innerText = "Guardando...";
 
                 try {
                     await db.collection("inventory").add({
                         name: document.getElementById('new-name').value,
-                        price: parseFloat(
+                        price: parseFloat(document.getElementById('new-price').value),
+                        cost: parseFloat(document.getElementById('new-cost').value),
+                        stock: parseInt(document.getElementById('new-stock').value), icon: '🍲'
+                    });
+                    e.target.reset();
+                } catch (error) { console.error(error); } 
+                finally { btn.disabled = false; btn.innerText = "Guardar"; }
+            },
+
+            async deleteProduct(id) {
+                if(!db) return;
+                if(confirm("¿Seguro que deseas eliminar este producto?")) {
+                    try { await db.collection("inventory").doc(id).delete(); } 
+                    catch (error) { console.error(error); }
+                }
+            },
+
+            renderKDS() {
+                const grid = document.getElementById('kds-grid'); const empty = document.getElementById('kds-empty'); const badge = document.getElementById('kds-badge');
+                grid.innerHTML = ''; document.getElementById('kds-count').innerText = this.state.activeOrders.length;
+                
+                if(this.state.activeOrders.length > 0) {
+                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden');
+                    empty.classList.replace('block', 'hidden'); grid.classList.replace('hidden', 'grid');
+                    
+                    this.state.activeOrders.forEach(order => {
+                        let html = ''; order.items.forEach(i => html += `<div class="border-b py-2 font-semibold text-slate-700">${i.qty}x ${i.name}</div>`);
+                        grid.innerHTML += `<div class="bg-amber-50 rounded-xl shadow-md border-t-4 border-amber-400 flex flex-col"><div class="bg-amber-100 p-3 font-black text-amber-900 text-lg"><span>#${order.number}</span></div><div class="p-4 flex-1">${html}</div><button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-emerald-500 text-white font-bold py-3">✅ Marcar Listo</button></div>`;
+                    });
+                } else { 
+                    badge.classList.add('hidden'); grid.classList.replace('grid', 'hidden'); empty.classList.replace('hidden', 'block');
+                }
+            },
+
+            renderInventory() {
+                const tbody = document.getElementById('inventory-tbody'); tbody.innerHTML = '';
+                this.state.inventory.forEach(item => {
+                    tbody.innerHTML += `<tr><td class="px-6 py-4 font-semibold">${item.icon || '🍲'} ${item.name}</td><td class="px-6 py-4">L. ${item.price.toFixed(2)}</td><td class="px-6 py-4 font-bold text-emerald-600">${item.stock}</td><td class="px-6 py-4 text-right"><button onclick="window.app.deleteProduct('${item.id}')" class="text-red-500 font-bold">✖ Eliminar</button></td></tr>`;
+                });
+            },
+
+            updateDashboard() {
+                let totalVentas = 0; let ordenesUnicas = new Set();
+                this.state.salesHistory.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
+                this.state.activeOrders.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
+                document.getElementById('dash-ventas').innerText = `L. ${totalVentas.toFixed(2)}`;
+                document.getElementById('dash-ordenes').innerText = ordenesUnicas.size;
+                document.getElementById('dash-alertas').innerText = this.state.inventory.filter(p => p.stock <= 10).length;
+            },
+
+            renderChart() {
+                const ctx = document.getElementById('accountingChart').getContext('2d'); const agg = {};
+                if(this.state.salesHistory.length === 0) { if (this.state.chartInstance) this.state.chartInstance.destroy(); return; }
+                this.state.salesHistory.forEach(order => {
+                    order.items.forEach(item => {
+                        if(!agg[item.name]) agg[item.name] = { revenue: 0, cost: 0 };
+                        agg[item.name].revenue += (item.price * item.qty); agg[item.name].cost += (item.cost * item.qty);
+                    });
+                });
+                const labels = Object.keys(agg); const costData = labels.map(l => agg[l].cost); const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
+                if (this.state.chartInstance) this.state.chartInstance.destroy();
+                this.state.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia', data: profitData, backgroundColor: '#10b981' }, { label: 'Costo', data: costData, backgroundColor: '#f43f5e' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } });
+            },
+
+            downloadCSV() {
+                if(this.state.salesHistory.length === 0) { alert("No hay ventas para exportar."); return; }
+                let csv = "data:text/csv;charset=utf-8,Orden,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
+                this.state.salesHistory.forEach(order => { order.items.forEach(item => { csv += `${order.number},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); });
+                const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Reporte_SPS.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            }
+        };
+
+        // 2. CONECTAMOS LA BASE DE DATOS DENTRO DE UN SEGURO ANTI-FALLOS (TRY-CATCH)
+        window.onload = () => {
+            console.log("Iniciando aplicación...");
+            // Renderizamos los menús de forma garantizada
+            window.app.renderPOSMenu();
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA",
+                authDomain: "momb2b-3eb14.firebaseapp.com",
+                projectId: "momb2b-3eb14",
+                storageBucket: "momb2b-3eb14.firebasestorage.app",
+                messagingSenderId: "440475320328",
+                appId: "1:440475320328:web:4111a01d8e8fabbea891bd",
+                measurementId: "G-Z0BYMW1H4W"
+            };
+
+            try {
+                // Verificamos si Firebase existe en el navegador
+                if (typeof firebase === 'undefined') throw new Error("Firebase bloqueado por el navegador o adblocker.");
+                
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+
+                console.log("Conectado a Firebase exitosamente.");
+
+                // Arrancamos la lectura de datos
+                db.collection("inventory").onSnapshot((snapshot) => {
+                    window.app.state.inventory = [];
+                    snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
+                    window.app.renderInventory();
+                    window.app.renderPOSMenu();
+                    window.app.updateDashboard();
+                });
+
+                db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
+                    window.app.state.activeOrders = [];
+                    window.app.state.salesHistory = [];
+                    snapshot.forEach((doc) => {
+                        const order = { id: doc.id, ...doc.data() };
+                        if (order.status === 'preparando') window.app.state.activeOrders.push(order);
+                        else if (order.status === 'listo') window.app.state.salesHistory.push(order);
+                    });
+                    window.app.state.orderCounter = snapshot.size + 1;
+                    const orderNumDisplay = document.getElementById('pos-order-number');
+                    if(orderNumDisplay) orderNumDisplay.innerText = window.app.state.orderCounter;
+                    
+                    window.app.renderKDS();
+                    window.app.updateDashboard();
+                    if(window.app.state.activeView === 'reportes') window.app.renderChart();
+                });
+
+            } catch (error) {
+                console.error("Fallo de Base de Datos:", error);
+                alert("Advertencia: No se pudo conectar a la Base de Datos. La navegación funcionará pero los cambios no se guardarán. (Presiona F12 para ver el error).");
+            }
+        };
+    </script>
+</body>
+</html>
