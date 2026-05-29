@@ -257,8 +257,33 @@
             addToCart(productId) { const product = this.state.inventory.find(p => p.id === productId); if (!product || product.stock <= 0) return; const existing = this.state.cart.find(c => c.id === productId); if (existing) { if(existing.qty < product.stock) existing.qty++; } else { this.state.cart.push({ ...product, qty: 1 }); } this.updateCartUI(); },
             decreaseCartQty(productId) { const item = this.state.cart.find(c => c.id === productId); if (item) { if (item.qty > 1) { item.qty--; this.updateCartUI(); } else { this.removeFromCart(productId); } } },
             removeFromCart(productId) { this.state.cart = this.state.cart.filter(c => c.id !== productId); this.updateCartUI(); },
-            updateCartUI() { const container = document.getElementById('cart-items'); const btnCobrar = document.getElementById('btn-cobrar'); container.innerHTML = ''; this.state.cartTotal = 0; if (this.state.cart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 mt-10 font-medium">No hay platillos en la orden</div>'; btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return; } btnCobrar.disabled = false; this.state.cart.forEach(item => { const total = item.price * item.qty; this.state.cartTotal += total; container.innerHTML += `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col mb-3"><div class="font-bold text-slate-800 text-lg leading-tight mb-3">${item.name} <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded ml-2">L.${item.price} ud</span></div><div class="flex justify-between items-center"><div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-200"><button onclick="window.app.decreaseCartQty('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">-</button><span class="w-10 text-center font-black text-xl text-slate-800">${item.qty}</span><button onclick="window.app.addToCart('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">+</button></div><div class="flex items-center gap-4"><div class="font-black text-2xl text-emerald-500 tracking-tighter">L.${total}</div><button onclick="window.app.removeFromCart('${item.id}')" class="text-rose-300 hover:text-rose-500 text-2xl transition pl-2">✖</button></div></div></div>`; }); document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`; },
+            //updateCartUI() { const container = document.getElementById('cart-items'); const btnCobrar = document.getElementById('btn-cobrar'); container.innerHTML = ''; this.state.cartTotal = 0; if (this.state.cart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 mt-10 font-medium">No hay platillos en la orden</div>'; btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return; } btnCobrar.disabled = false; this.state.cart.forEach(item => { const total = item.price * item.qty; this.state.cartTotal += total; container.innerHTML += `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col mb-3"><div class="font-bold text-slate-800 text-lg leading-tight mb-3">${item.name} <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded ml-2">L.${item.price} ud</span></div><div class="flex justify-between items-center"><div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-200"><button onclick="window.app.decreaseCartQty('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">-</button><span class="w-10 text-center font-black text-xl text-slate-800">${item.qty}</span><button onclick="window.app.addToCart('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">+</button></div><div class="flex items-center gap-4"><div class="font-black text-2xl text-emerald-500 tracking-tighter">L.${total}</div><button onclick="window.app.removeFromCart('${item.id}')" class="text-rose-300 hover:text-rose-500 text-2xl transition pl-2">✖</button></div></div></div>`; }); document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`; },
+updateCartUI() {
+    const container = document.getElementById('cart-items');
+    container.innerHTML = ''; this.state.cartTotal = 0;
+    this.state.cart.forEach(item => {
+        const total = item.price * item.qty; this.state.cartTotal += total;
+        container.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-black text-slate-800">${item.qty}x ${item.name}</span>
+                    <span class="font-bold text-emerald-600">L.${total}</span>
+                </div>
+                <!-- CAMPO DE NOTAS -->
+                <input type="text" placeholder="📝 Notas (ej. Sin repollo)" 
+                    class="w-full text-xs bg-amber-50 border border-amber-200 rounded p-1.5 focus:border-amber-400 outline-none"
+                    value="${item.note || ''}" 
+                    onchange="window.app.updateItemNote('${item.id}', this.value)">
+            </div>`;
+    });
+}
 
+// 2. Nueva función para guardar notas
+updateItemNote(id, note) {
+    const item = this.state.cart.find(c => c.id === id);
+    if(item) item.note = note;
+}
+        
             // --- CHECKOUT ---
             openCheckoutModal() { document.getElementById('modal-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`; document.getElementById('modal-recibido').value = ''; this.toggleCashInput(); document.getElementById('modal-checkout').classList.remove('hidden'); setTimeout(() => document.getElementById('modal-recibido').focus(), 100); },
             closeCheckoutModal() { document.getElementById('modal-checkout').classList.add('hidden'); },
@@ -305,7 +330,13 @@
                             headerBg = 'bg-amber-100'; headerText = 'text-amber-800'; borderCol = 'border-amber-400'; timeBadge = `<span class="bg-amber-300 text-amber-900 px-2 py-1 rounded text-xs font-black">${diffMins} min</span>`;
                         }
 
-                        let html = ''; order.items.forEach(i => html += `<div class="border-b border-slate-100 py-4 font-bold text-slate-700 text-xl flex items-start gap-4"><span class="bg-slate-800 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm">${i.qty}</span> <span class="leading-tight">${i.name}</span></div>`);
+                        //let html = ''; order.items.forEach(i => html += `<div class="border-b border-slate-100 py-4 font-bold text-slate-700 text-xl flex items-start gap-4"><span class="bg-slate-800 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm">${i.qty}</span> <span class="leading-tight">${i.name}</span></div>`);
+                        let noteHTML = i.note ? `<div class="text-rose-600 text-xs font-bold uppercase mt-1">⚠ ${i.note}</div>` : '';
+html += `<div class="border-b py-3 font-semibold text-slate-700">${i.qty}x ${i.name} ${noteHTML}</div>`;
+
+// 4. Módulo de Configuración de Permisos (Ejemplo conceptual de la lógica que agregaremos al Tab de Configuración)
+// [El Admin verá una lista de usuarios y checkboxes para: POS, KDS, Inventario, Reportes]
+                        
                         grid.innerHTML += `<div class="snap-start shrink-0 w-80 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border-t-8 ${borderCol} flex flex-col relative h-[60vh] max-h-[600px] overflow-hidden">${pingHTML}<div class="${headerBg} p-5 flex justify-between items-center"><span class="font-black ${headerText} text-2xl tracking-tighter">#${order.number}</span>${timeBadge}</div><div class="p-5 flex-1 overflow-y-auto bg-white/50">${html}</div><div class="p-4 bg-slate-50 border-t border-slate-100"><button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-slate-800 hover:bg-slate-900 transition-colors text-white font-black py-4 rounded-xl text-lg tracking-widest shadow-md">DESPACHAR</button></div></div>`;
                     });
                 } else { badge.classList.add('hidden'); grid.classList.remove('flex'); grid.classList.add('hidden'); empty.classList.remove('hidden'); empty.classList.add('flex'); }
