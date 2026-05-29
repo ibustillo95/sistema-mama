@@ -7,8 +7,10 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
@@ -22,142 +24,163 @@
         .filter-btn.active { background-color: #1e293b; color: white; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden text-slate-800">
+<body class="text-slate-800 overflow-hidden h-screen w-screen">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 flex flex-col shadow-xl z-20 hidden md:flex">
-        <div class="p-6 flex items-center gap-3 border-b border-slate-800">
-            <span class="text-3xl">🍲</span>
-            <div><h1 class="text-white font-bold text-lg leading-tight">Sazón SPS</h1><p class="text-slate-400 text-xs uppercase tracking-wider">Mini ERP</p></div>
-        </div>
-        <nav class="flex-1 p-4 overflow-y-auto">
-            <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active"><span class="mr-3 text-xl">🏠</span> Inicio</div>
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Operaciones</div>
-            <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item"><span class="mr-3 text-xl">🛒</span> Punto de Venta</div>
-            <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item"><span class="mr-3 text-xl">👨‍🍳</span> Cocina <span id="kds-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span></div>
-            <div onclick="window.app.switchView('historial')" id="nav-historial" class="nav-item"><span class="mr-3 text-xl">🧾</span> Historial</div>
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Administración</div>
-            <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item"><span class="mr-3 text-xl">📦</span> Inventario</div>
-            <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item"><span class="mr-3 text-xl">📊</span> Reportes</div>
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Soporte</div>
-            <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item"><span class="mr-3 text-xl">📚</span> Guía Legal SPS</div>
-        </nav>
-    </aside>
-
-    <!-- ÁREA PRINCIPAL -->
-    <main class="flex-1 h-screen overflow-y-auto relative">
-        <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
-            <div class="font-bold text-lg">🍲 Sazón SPS</div>
-            <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded p-2 text-sm" onchange="window.app.switchView(this.value)">
-                <option value="dashboard">Inicio</option><option value="pos">Punto de Venta</option><option value="kds">Cocina</option><option value="historial">Historial</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option><option value="guia">Guía Legal</option>
-            </select>
-        </header>
-
-        <div class="p-4 md:p-8 max-w-7xl mx-auto">
-            <!-- 1. DASHBOARD -->
-            <div id="view-dashboard" class="block animate-fade-in">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Resumen de Hoy</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-emerald-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Ingresos Reales (Hoy)</div><div class="text-3xl font-bold text-slate-800" id="dash-ventas">L. 0.00</div></div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Tickets Válidos (Hoy)</div><div class="text-3xl font-bold text-slate-800" id="dash-ordenes">0</div></div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Alertas de Stock</div><div class="text-3xl font-bold text-slate-800" id="dash-alertas">0</div></div>
-                </div>
+    <div id="login-layout" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-2">🍲</div>
+                <h1 class="text-2xl font-black text-slate-800">Sazón SPS</h1>
+                <p class="text-slate-500 text-sm mt-1">Acceso Seguro al ERP</p>
             </div>
+            
+            <form onsubmit="window.app.login(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="login-email" required placeholder="ejemplo@sazonsps.com" class="w-full border-2 border-slate-200 rounded-lg p-3 outline-none focus:border-amber-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="login-pass" required placeholder="••••••••" class="w-full border-2 border-slate-200 rounded-lg p-3 outline-none focus:border-amber-500 transition">
+                </div>
+                <button type="submit" id="btn-login" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition text-lg mt-4">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
 
-            <!-- 2. PUNTO DE VENTA (POS) -->
-            <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
-                <div class="flex flex-col lg:flex-row gap-6 h-full">
-                    <div class="lg:w-2/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700">Menú de Productos</h3></div>
-                        <div class="p-4 overflow-y-auto flex-1"><div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div></div>
+    <div id="app-layout" class="hidden h-screen flex w-full">
+        
+        <aside class="w-64 bg-slate-900 flex flex-col shadow-xl z-20 hidden md:flex h-full">
+            <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+                <span class="text-3xl">🍲</span>
+                <div><h1 class="text-white font-bold text-lg leading-tight">Sazón SPS</h1><p class="text-slate-400 text-xs uppercase tracking-wider" id="sidebar-role">Cargando...</p></div>
+            </div>
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active"><span class="mr-3 text-xl">🏠</span> Inicio</div>
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Operaciones</div>
+                <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item"><span class="mr-3 text-xl">🛒</span> Punto de Venta</div>
+                <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item"><span class="mr-3 text-xl">👨‍🍳</span> Cocina <span id="kds-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span></div>
+                <div onclick="window.app.switchView('historial')" id="nav-historial" class="nav-item"><span class="mr-3 text-xl">🧾</span> Historial</div>
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2" id="nav-group-admin">Administración</div>
+                <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item"><span class="mr-3 text-xl">📦</span> Inventario</div>
+                <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item"><span class="mr-3 text-xl">📊</span> Reportes</div>
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Soporte</div>
+                <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item"><span class="mr-3 text-xl">📚</span> Guía Legal</div>
+            </nav>
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="window.app.logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 font-semibold py-2 rounded transition">
+                    🚪 Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 h-screen overflow-y-auto relative bg-slate-50">
+            
+            <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
+                <div class="font-bold text-lg">🍲 Sazón SPS</div>
+                <div class="flex gap-2 items-center">
+                    <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded p-2 text-sm" onchange="window.app.switchView(this.value)">
+                        <option value="dashboard">Inicio</option><option value="pos">Punto de Venta</option><option value="kds">Cocina</option><option value="historial">Historial</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option><option value="guia">Guía Legal</option>
+                    </select>
+                    <button onclick="window.app.logout()" class="bg-red-900 text-red-200 px-3 py-2 rounded text-sm">Salir</button>
+                </div>
+            </header>
+
+            <div class="p-4 md:p-8 max-w-7xl mx-auto">
+                <div id="view-dashboard" class="block animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-6 text-slate-800">Resumen de Hoy</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-emerald-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Ingresos Reales (Hoy)</div><div class="text-3xl font-bold text-slate-800" id="dash-ventas">L. 0.00</div></div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Tickets Válidos (Hoy)</div><div class="text-3xl font-bold text-slate-800" id="dash-ordenes">0</div></div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500"><div class="text-sm text-slate-500 font-semibold uppercase mb-1">Alertas de Stock</div><div class="text-3xl font-bold text-slate-800" id="dash-alertas">0</div></div>
                     </div>
-                    <div class="lg:w-1/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
-                        <div class="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700 text-xl">Orden #<span id="pos-order-number">1</span></h3></div>
-                        <div id="cart-items" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50/50"></div>
-                        <div class="p-4 border-t border-slate-200 bg-white rounded-b-xl">
-                            <div class="flex justify-between font-bold text-3xl text-slate-800 mb-4"><span>Total</span><span id="cart-total">L. 0.00</span></div>
-                            <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 text-xl tracking-wide" disabled>💳 COBRAR</button>
+                </div>
+
+                <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
+                    <div class="flex flex-col lg:flex-row gap-6 h-full">
+                        <div class="lg:w-2/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
+                            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700">Menú de Productos</h3></div>
+                            <div class="p-4 overflow-y-auto flex-1"><div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4"></div></div>
+                        </div>
+                        <div class="lg:w-1/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
+                            <div class="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl"><h3 class="font-bold text-slate-700 text-xl">Orden #<span id="pos-order-number">1</span></h3></div>
+                            <div id="cart-items" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50/50"></div>
+                            <div class="p-4 border-t border-slate-200 bg-white rounded-b-xl">
+                                <div class="flex justify-between font-bold text-3xl text-slate-800 mb-4"><span>Total</span><span id="cart-total">L. 0.00</span></div>
+                                <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 text-xl tracking-wide" disabled>💳 COBRAR</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-kds" class="hidden">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2><span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span></div>
+                    <div id="kds-empty" class="text-center text-slate-400 py-20 block"><span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes en este momento.</div>
+                    <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+                </div>
+
+                <div id="view-historial" class="hidden">
+                    <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Historial de Órdenes</h2><p class="text-slate-500 text-sm">Auditoría de ventas realizadas. Puedes anular facturas en caso de error.</p></div>
+                    <div id="historial-empty" class="text-center text-slate-400 py-10 block"><span class="text-4xl mb-4 block">🧾</span>Aún no hay órdenes despachadas.</div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden" id="historial-container">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Orden / Hora</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Detalle del Pedido</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pago</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Total</th><th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Acción</th></tr></thead>
+                            <tbody id="historial-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-inventario" class="hidden">
+                    <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Gestión de Inventario</h2></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4">➕ Agregar Nuevo Producto</h3>
+                        <form onsubmit="window.app.addProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                            <div class="md:col-span-2"><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nombre</label><input type="text" id="new-name" required class="w-full border border-slate-300 rounded p-2 outline-none focus:border-amber-500"></div>
+                            <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Precio Venta (L)</label><input type="number" id="new-price" required min="1" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                            <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Costo Base (L)</label><input type="number" id="new-cost" required min="0" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                            <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stock Inicial</label><input type="number" id="new-stock" required min="0" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                            <div class="md:col-span-5 flex justify-end mt-2"><button type="submit" id="btn-save-product" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700">Guardar</button></div>
+                        </form>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Producto</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Precio</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Stock</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acciones</th></tr></thead>
+                            <tbody id="inventory-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-reportes" class="hidden">
+                    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2>
+                        <div class="flex bg-slate-200 p-1 rounded-lg">
+                            <button onclick="window.app.setReportFilter('hoy')" id="filter-hoy" class="filter-btn active px-4 py-1 rounded-md text-sm font-semibold transition-colors">Hoy</button>
+                            <button onclick="window.app.setReportFilter('semana')" id="filter-semana" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Semana</button>
+                            <button onclick="window.app.setReportFilter('mes')" id="filter-mes" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Mes</button>
+                        </div>
+                        <button onclick="window.app.downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">📥 Descargar Excel</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center"><span class="font-bold text-slate-500">Ingresos Totales Válidos</span><span class="text-2xl font-black text-emerald-600" id="report-revenue">L. 0.00</span></div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center"><span class="font-bold text-slate-500">Costo Estimado</span><span class="text-2xl font-black text-red-500" id="report-cost">L. 0.00</span></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><div class="chart-container"><canvas id="accountingChart"></canvas></div></div>
+                </div>
+
+                <div id="view-guia" class="hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-200">
+                        <h2 class="text-2xl font-bold mb-4 text-slate-800">Guía Legal y Fiscal: San Pedro Sula</h2>
+                        <div class="space-y-6">
+                            <div class="border-l-4 border-amber-500 pl-4 py-2 bg-amber-50 rounded-r-lg"><h4 class="font-bold text-slate-800 text-lg">1. SAR</h4><p class="text-sm text-slate-700 mt-2">Todo negocio debe emitir comprobantes fiscales. Solicite el CAI virtualmente.</p></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <!-- 3. KDS (Cocina) -->
-            <div id="view-kds" class="hidden">
-                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2><span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span></div>
-                <div id="kds-empty" class="text-center text-slate-400 py-20 block"><span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes en este momento.</div>
-                <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
-            </div>
-
-            <!-- 3.5 HISTORIAL DE ÓRDENES (CON ANULACIÓN) -->
-            <div id="view-historial" class="hidden">
-                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Historial de Órdenes (Despachadas)</h2><p class="text-slate-500 text-sm">Auditoría de ventas realizadas. Puedes anular facturas en caso de error.</p></div>
-                <div id="historial-empty" class="text-center text-slate-400 py-10 block"><span class="text-4xl mb-4 block">🧾</span>Aún no hay órdenes despachadas.</div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden" id="historial-container">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Orden / Hora</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Detalle del Pedido</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pago</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Total</th><th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Acción</th></tr></thead>
-                        <tbody id="historial-tbody" class="bg-white divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 4. INVENTARIO (CON EDICIÓN) -->
-            <div id="view-inventario" class="hidden">
-                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Gestión de Inventario</h2></div>
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
-                    <h3 class="font-bold text-slate-700 mb-4">➕ Agregar Nuevo Producto</h3>
-                    <form onsubmit="window.app.addProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                        <div class="md:col-span-2"><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nombre</label><input type="text" id="new-name" required class="w-full border border-slate-300 rounded p-2 outline-none focus:border-amber-500"></div>
-                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Precio Venta (L)</label><input type="number" id="new-price" required min="1" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Costo Base (L)</label><input type="number" id="new-cost" required min="0" step="0.5" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                        <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stock Inicial</label><input type="number" id="new-stock" required min="0" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                        <div class="md:col-span-5 flex justify-end mt-2"><button type="submit" id="btn-save-product" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700">Guardar</button></div>
-                    </form>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Producto</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Precio</th><th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Stock</th><th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acciones</th></tr></thead>
-                        <tbody id="inventory-tbody" class="bg-white divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 5. REPORTES -->
-            <div id="view-reportes" class="hidden">
-                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2>
-                    <div class="flex bg-slate-200 p-1 rounded-lg">
-                        <button onclick="window.app.setReportFilter('hoy')" id="filter-hoy" class="filter-btn active px-4 py-1 rounded-md text-sm font-semibold transition-colors">Hoy</button>
-                        <button onclick="window.app.setReportFilter('semana')" id="filter-semana" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Semana</button>
-                        <button onclick="window.app.setReportFilter('mes')" id="filter-mes" class="filter-btn px-4 py-1 rounded-md text-sm font-semibold text-slate-600 transition-colors">Mes</button>
-                    </div>
-                    <button onclick="window.app.downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">📥 Descargar Excel</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center"><span class="font-bold text-slate-500">Ingresos Totales Válidos</span><span class="text-2xl font-black text-emerald-600" id="report-revenue">L. 0.00</span></div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center"><span class="font-bold text-slate-500">Costo Estimado</span><span class="text-2xl font-black text-red-500" id="report-cost">L. 0.00</span></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><div class="chart-container"><canvas id="accountingChart"></canvas></div></div>
-            </div>
-
-            <!-- 6. GUÍA LEGAL -->
-            <div id="view-guia" class="hidden">
-                <div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-200">
-                    <h2 class="text-2xl font-bold mb-4 text-slate-800">Guía Legal y Fiscal: San Pedro Sula</h2>
-                    <p class="text-slate-600 mb-6">Información de consulta rápida para la correcta administración del negocio frente a las autoridades hondureñas.</p>
-                    <div class="space-y-6">
-                        <div class="border-l-4 border-amber-500 pl-4 py-2 bg-amber-50 rounded-r-lg"><h4 class="font-bold text-slate-800 text-lg">1. SAR (Servicio de Administración de Rentas)</h4><p class="text-sm text-slate-700 mt-2">Todo negocio debe emitir comprobantes fiscales. Es vital solicitar el CAI en la oficina virtual del SAR. El ticket debe llevar impreso el CAI y la fecha límite.</p></div>
-                        <div class="border-l-4 border-emerald-500 pl-4 py-2 bg-emerald-50 rounded-r-lg"><h4 class="font-bold text-slate-800 text-lg">2. Alcaldía Municipal (SPS)</h4><p class="text-sm text-slate-700 mt-2">Debe renovarse en el mes de Enero. El pago de impuestos (Volumen de Ventas) se calcula en base a los ingresos. Mantenga el permiso visible.</p></div>
-                        <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg"><h4 class="font-bold text-slate-800 text-lg">3. Obligaciones Contables</h4><p class="text-sm text-slate-700 mt-2">Usa el botón "Descargar Excel" en Reportes al finalizar cada mes para entregar a tu contador.</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- MODALES -->
-
-    <!-- MODAL DE COBRO -->
     <div id="modal-checkout" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-emerald-600 p-4 text-white text-center"><h3 class="font-bold text-xl">Finalizar Venta</h3></div>
@@ -170,7 +193,6 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR INVENTARIO -->
     <div id="modal-edit-product" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-slate-800 p-4 text-white text-center"><h3 class="font-bold text-xl">Actualizar Producto</h3></div>
@@ -197,32 +219,77 @@
 
         window.app = {
             state: {
-                activeView: 'dashboard', orderCounter: 1, inventory: [], cart: [], 
+                activeView: 'pos', orderCounter: 1, inventory: [], cart: [], 
                 cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null,
-                reportFilter: 'hoy'
+                reportFilter: 'hoy',
+                isAdmin: false
             },
 
+            // --- AUTHENTICATION ---
+            login(e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const btn = document.getElementById('btn-login');
+                btn.disabled = true; btn.innerText = "Verificando...";
+
+                firebase.auth().signInWithEmailAndPassword(email, pass)
+                    .catch(error => {
+                        alert("Error de acceso: " + error.message + "\n\n(Asegúrate de haber creado el usuario en la consola de Firebase)");
+                        btn.disabled = false; btn.innerText = "Iniciar Sesión";
+                    });
+            },
+
+            logout() {
+                firebase.auth().signOut().then(() => {
+                    window.location.reload(); // Recarga limpia
+                });
+            },
+
+            applyRoles(user) {
+                // Lógica simple de roles: si el correo contiene 'admin', es administrador
+                this.state.isAdmin = user.email.toLowerCase().includes('admin');
+                
+                document.getElementById('sidebar-role').innerText = this.state.isAdmin ? 'Admin' : 'Ventas';
+                
+                // Módulos exclusivos de administrador
+                const adminModules = ['nav-dashboard', 'nav-historial', 'nav-inventario', 'nav-reportes', 'nav-group-admin'];
+                
+                adminModules.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = this.state.isAdmin ? 'flex' : 'none';
+                });
+
+                // Los de ventas abren directo en el POS. Los admins abren en Dashboard.
+                this.switchView(this.state.isAdmin ? 'dashboard' : 'pos');
+            },
+
+            // --- NAVIGATION ---
             switchView(viewId) {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                 const navBtn = document.getElementById(`nav-${viewId}`);
                 if(navBtn) navBtn.classList.add('active');
-                ['dashboard', 'pos', 'kds', 'historial', 'inventario', 'reportes', 'guia'].forEach(id => document.getElementById(`view-${id}`).classList.add('hidden'));
+                
+                ['dashboard', 'pos', 'kds', 'historial', 'inventario', 'reportes', 'guia'].forEach(id => {
+                    const el = document.getElementById(`view-${id}`);
+                    if(el) el.classList.add('hidden');
+                });
                 document.getElementById(`view-${viewId}`).classList.remove('hidden');
                 this.state.activeView = viewId;
 
-                if(viewId === 'dashboard') this.updateDashboard();
-                if(viewId === 'reportes') this.renderChart();
+                if(viewId === 'dashboard' && this.state.isAdmin) this.updateDashboard();
+                if(viewId === 'reportes' && this.state.isAdmin) this.renderChart();
                 if(viewId === 'kds') this.renderKDS();
-                if(viewId === 'historial') this.renderHistory();
+                if(viewId === 'historial' && this.state.isAdmin) this.renderHistory();
             },
 
-            // --- POS Y CARRITO ---
+            // --- POS Y CARRITO (CON REDUCCIÓN) ---
             renderPOSMenu() {
                 const grid = document.getElementById('product-grid'); grid.innerHTML = '';
                 if(this.state.inventory.length === 0) return grid.innerHTML = '<div class="col-span-full text-center text-slate-500 mt-10">Base de datos vacía.</div>';
                 this.state.inventory.forEach(item => {
                     const disabled = item.stock <= 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 shadow-sm';
-                    grid.innerHTML += `<div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center transition-all ${disabled}"><div class="text-4xl mb-2">${item.icon || '🍲'}</div><div class="font-bold text-sm leading-tight">${item.name}</div><div class="text-emerald-600 font-bold mt-1 text-lg">L. ${item.price}</div><div class="text-xs text-slate-400 mt-1 font-semibold">Quedan: ${item.stock}</div></div>`;
+                    grid.innerHTML += `<div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center transition-all ${disabled}"><div class="text-5xl mb-3">${item.icon || '🍲'}</div><div class="font-bold text-sm leading-tight">${item.name}</div><div class="text-emerald-600 font-bold mt-1 text-lg">L. ${item.price}</div><div class="text-xs text-slate-400 mt-1 font-semibold">Quedan: ${item.stock}</div></div>`;
                 });
             },
 
@@ -233,6 +300,15 @@
                 this.updateCartUI();
             },
 
+            // NUEVO: Reducir cantidad en carrito
+            decreaseCartQty(productId) {
+                const item = this.state.cart.find(c => c.id === productId);
+                if (item) {
+                    if (item.qty > 1) { item.qty--; this.updateCartUI(); } 
+                    else { this.removeFromCart(productId); }
+                }
+            },
+
             removeFromCart(productId) { this.state.cart = this.state.cart.filter(c => c.id !== productId); this.updateCartUI(); },
 
             updateCartUI() {
@@ -240,9 +316,26 @@
                 container.innerHTML = ''; this.state.cartTotal = 0;
                 if (this.state.cart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 mt-10">Orden vacía</div>'; btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return; }
                 btnCobrar.disabled = false;
+                
                 this.state.cart.forEach(item => {
                     const total = item.price * item.qty; this.state.cartTotal += total;
-                    container.innerHTML += `<div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center mb-3"><div class="flex items-center"><div class="bg-emerald-100 text-emerald-800 font-black text-2xl w-12 h-12 flex justify-center items-center rounded-lg mr-4 border border-emerald-300">${item.qty}</div><div><div class="font-bold text-slate-800 text-lg leading-tight">${item.name}</div><div class="text-sm font-semibold text-slate-500">L.${item.price} c/u</div></div></div><div class="flex items-center gap-4"><div class="font-black text-xl text-emerald-600">L.${total}</div><button onclick="window.app.removeFromCart('${item.id}')" class="bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-700 w-10 h-10 rounded-full font-bold text-xl flex justify-center items-center transition">✖</button></div></div>`;
+                    
+                    // Diseño con botones de + y -
+                    container.innerHTML += `
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-col mb-3">
+                            <div class="font-bold text-slate-800 text-lg leading-tight mb-2">${item.name} <span class="text-sm font-semibold text-slate-400 font-normal">L.${item.price} c/u</span></div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                                    <button onclick="window.app.decreaseCartQty('${item.id}')" class="w-8 h-8 text-slate-600 hover:bg-white hover:shadow rounded font-bold text-xl flex items-center justify-center transition">-</button>
+                                    <span class="w-10 text-center font-black text-xl text-slate-800">${item.qty}</span>
+                                    <button onclick="window.app.addToCart('${item.id}')" class="w-8 h-8 text-slate-600 hover:bg-white hover:shadow rounded font-bold text-xl flex items-center justify-center transition">+</button>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="font-black text-xl text-emerald-600">L.${total}</div>
+                                    <button onclick="window.app.removeFromCart('${item.id}')" class="text-red-400 hover:text-red-600 text-2xl transition px-2">✖</button>
+                                </div>
+                            </div>
+                        </div>`;
                 });
                 document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`;
             },
@@ -264,41 +357,25 @@
                     const batch = db.batch();
                     this.state.cart.forEach(c => { const invRef = db.collection("inventory").doc(c.id); batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(-c.qty) }); });
                     const orderRef = db.collection("orders").doc();
-                    batch.set(orderRef, { number: this.state.orderCounter, items: this.state.cart, total: this.state.cartTotal, status: 'preparando', method: document.getElementById('modal-metodo').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    batch.set(orderRef, { number: this.state.orderCounter, items: this.state.cart, total: this.state.cartTotal, status: 'preparando', method: document.getElementById('modal-metodo').value, timestamp: firebase.firestore.FieldValue.serverTimestamp(), user: firebase.auth().currentUser.email });
                     await batch.commit();
                     this.state.cart = []; this.updateCartUI(); this.closeCheckoutModal();
                     const btnCobrar = document.getElementById('btn-cobrar'); btnCobrar.innerText = "¡Orden Lista!"; btnCobrar.classList.replace('bg-emerald-600', 'bg-blue-600'); setTimeout(() => { btnCobrar.innerText = "💳 COBRAR"; btnCobrar.classList.replace('bg-blue-600', 'bg-emerald-600'); }, 2000);
-                } catch (error) { console.error("Error guardando venta:", error); alert("Error al procesar la factura."); } finally { btn.innerText = "Confirmar"; btn.disabled = false; }
+                } catch (error) { console.error(error); alert("Error al procesar."); } finally { btn.innerText = "Confirmar"; btn.disabled = false; }
             },
 
             async completeOrder(orderId) { if(!db) return; try { await db.collection("orders").doc(orderId).update({ status: 'listo' }); } catch (error) { console.error(error); } },
-
-            // NUEVO: ANULAR VENTA
+            
             async annulOrder(orderId) {
                 if(!db) return;
-                if(!confirm("⚠️ ¿Seguro que deseas ANULAR esta factura?\n\n- El dinero se restará de los reportes.\n- El stock de los productos regresará al inventario.")) return;
-                
+                if(!confirm("⚠️ ¿Seguro que deseas ANULAR esta factura?")) return;
                 try {
-                    const order = this.state.salesHistory.find(o => o.id === orderId);
-                    if(!order) return;
-
+                    const order = this.state.salesHistory.find(o => o.id === orderId); if(!order) return;
                     const batch = db.batch();
-                    // 1. Cambiar estado a anulado
-                    const orderRef = db.collection("orders").doc(orderId);
-                    batch.update(orderRef, { status: 'anulado' });
-
-                    // 2. Regresar items al inventario
-                    order.items.forEach(item => {
-                        const invRef = db.collection("inventory").doc(item.id);
-                        batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(item.qty) });
-                    });
-
-                    await batch.commit();
-                    alert("✅ Factura anulada. El stock fue restaurado exitosamente.");
-                } catch (error) {
-                    console.error("Error al anular:", error);
-                    alert("Ocurrió un error al intentar anular la factura.");
-                }
+                    const orderRef = db.collection("orders").doc(orderId); batch.update(orderRef, { status: 'anulado' });
+                    order.items.forEach(item => { const invRef = db.collection("inventory").doc(item.id); batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(item.qty) }); });
+                    await batch.commit(); alert("✅ Factura anulada.");
+                } catch (error) { console.error(error); alert("Error al anular."); }
             },
 
             // --- DB: INVENTARIO ---
@@ -307,32 +384,12 @@
                 try { await db.collection("inventory").add({ name: document.getElementById('new-name').value, price: parseFloat(document.getElementById('new-price').value), cost: parseFloat(document.getElementById('new-cost').value), stock: parseInt(document.getElementById('new-stock').value), icon: '🍲' }); e.target.reset(); } catch (error) { console.error(error); } finally { btn.disabled = false; btn.innerText = "Guardar"; }
             },
             async deleteProduct(id) { if(!db) return; if(confirm("¿Seguro que deseas eliminar el producto?")) { try { await db.collection("inventory").doc(id).delete(); } catch (error) { console.error(error); } } },
-
-            // NUEVO: EDITAR INVENTARIO
-            openEditModal(id) {
-                const product = this.state.inventory.find(p => p.id === id);
-                if(!product) return;
-                document.getElementById('edit-id').value = product.id;
-                document.getElementById('edit-name').value = product.name;
-                document.getElementById('edit-price').value = product.price;
-                document.getElementById('edit-cost').value = product.cost;
-                document.getElementById('edit-stock').value = product.stock;
-                document.getElementById('modal-edit-product').classList.remove('hidden');
-            },
+            openEditModal(id) { const product = this.state.inventory.find(p => p.id === id); if(!product) return; document.getElementById('edit-id').value = product.id; document.getElementById('edit-name').value = product.name; document.getElementById('edit-price').value = product.price; document.getElementById('edit-cost').value = product.cost; document.getElementById('edit-stock').value = product.stock; document.getElementById('modal-edit-product').classList.remove('hidden'); },
             closeEditModal() { document.getElementById('modal-edit-product').classList.add('hidden'); },
             async saveEditedProduct(e) {
-                e.preventDefault(); if(!db) return;
-                const btn = document.getElementById('btn-update-product'); btn.disabled = true; btn.innerText = "...";
+                e.preventDefault(); if(!db) return; const btn = document.getElementById('btn-update-product'); btn.disabled = true; btn.innerText = "...";
                 const id = document.getElementById('edit-id').value;
-                try {
-                    await db.collection("inventory").doc(id).update({
-                        name: document.getElementById('edit-name').value,
-                        price: parseFloat(document.getElementById('edit-price').value),
-                        cost: parseFloat(document.getElementById('edit-cost').value),
-                        stock: parseInt(document.getElementById('edit-stock').value)
-                    });
-                    this.closeEditModal();
-                } catch (error) { console.error("Error al actualizar:", error); } finally { btn.disabled = false; btn.innerText = "Actualizar"; }
+                try { await db.collection("inventory").doc(id).update({ name: document.getElementById('edit-name').value, price: parseFloat(document.getElementById('edit-price').value), cost: parseFloat(document.getElementById('edit-cost').value), stock: parseInt(document.getElementById('edit-stock').value) }); this.closeEditModal(); } catch (error) { console.error(error); } finally { btn.disabled = false; btn.innerText = "Actualizar"; }
             },
 
             // --- RENDERIZADO VISUAL ---
@@ -354,27 +411,15 @@
                 if(this.state.salesHistory.length > 0) {
                     empty.classList.replace('block', 'hidden'); container.classList.remove('hidden');
                     const sortedHistory = [...this.state.salesHistory].sort((a, b) => b.dateObj - a.dateObj);
-                    
                     sortedHistory.forEach(order => {
                         let itemsHtml = order.items.map(i => `${i.qty}x ${i.name}`).join('<br>');
                         let timeStr = order.dateObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
                         let methodIcon = order.method === 'efectivo' ? '💵 Efectivo' : '💳 Tarjeta';
-
-                        // Lógica de Anulación visual
                         const isAnulado = order.status === 'anulado';
                         const rowClass = isAnulado ? 'bg-red-50 opacity-80' : 'hover:bg-slate-50';
                         const textClass = isAnulado ? 'line-through text-slate-400' : 'text-emerald-600';
-                        const actionBtn = isAnulado ? 
-                            `<span class="bg-red-100 text-red-600 font-bold px-2 py-1 rounded text-xs uppercase tracking-wider">Anulada</span>` : 
-                            `<button onclick="window.app.annulOrder('${order.id}')" class="text-red-500 hover:text-red-700 font-bold text-sm bg-white border border-red-200 px-3 py-1 rounded shadow-sm hover:bg-red-50 transition">🚫 Anular</button>`;
-
-                        tbody.innerHTML += `<tr class="${rowClass} border-b border-slate-100 last:border-0">
-                            <td class="px-6 py-4"><div class="font-bold text-slate-800 text-lg">#${order.number}</div><div class="text-xs text-slate-500">${timeStr}</div></td>
-                            <td class="px-6 py-4 text-sm font-semibold text-slate-700">${itemsHtml}</td>
-                            <td class="px-6 py-4 text-sm text-slate-600">${methodIcon}</td>
-                            <td class="px-6 py-4 text-right font-black ${textClass} text-lg">L. ${order.total.toFixed(2)}</td>
-                            <td class="px-6 py-4 text-center">${actionBtn}</td>
-                        </tr>`;
+                        const actionBtn = isAnulado ? `<span class="bg-red-100 text-red-600 font-bold px-2 py-1 rounded text-xs uppercase tracking-wider">Anulada</span>` : `<button onclick="window.app.annulOrder('${order.id}')" class="text-red-500 hover:text-red-700 font-bold text-sm bg-white border border-red-200 px-3 py-1 rounded shadow-sm hover:bg-red-50 transition">🚫 Anular</button>`;
+                        tbody.innerHTML += `<tr class="${rowClass} border-b border-slate-100 last:border-0"><td class="px-6 py-4"><div class="font-bold text-slate-800 text-lg">#${order.number}</div><div class="text-xs text-slate-500">${timeStr}<br>Por: ${order.user.split('@')[0]}</div></td><td class="px-6 py-4 text-sm font-semibold text-slate-700">${itemsHtml}</td><td class="px-6 py-4 text-sm text-slate-600">${methodIcon}</td><td class="px-6 py-4 text-right font-black ${textClass} text-lg">L. ${order.total.toFixed(2)}</td><td class="px-6 py-4 text-center">${actionBtn}</td></tr>`;
                     });
                 } else { container.classList.add('hidden'); empty.classList.replace('hidden', 'block'); }
             },
@@ -382,33 +427,20 @@
             renderInventory() {
                 const tbody = document.getElementById('inventory-tbody'); tbody.innerHTML = '';
                 this.state.inventory.forEach(item => { 
-                    tbody.innerHTML += `<tr class="border-b border-slate-100">
-                        <td class="px-6 py-4 font-semibold text-lg">${item.icon || '🍲'} ${item.name}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-600">L. ${item.price.toFixed(2)}</td>
-                        <td class="px-6 py-4 font-black text-emerald-600 text-lg">${item.stock}</td>
-                        <td class="px-6 py-4 text-right flex justify-end gap-2">
-                            <button onclick="window.app.openEditModal('${item.id}')" class="bg-slate-100 text-slate-600 px-3 py-1 rounded hover:bg-slate-200 font-bold flex items-center gap-1">✏️ Editar</button>
-                            <button onclick="window.app.deleteProduct('${item.id}')" class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 font-bold">✖</button>
-                        </td>
-                    </tr>`; 
+                    tbody.innerHTML += `<tr class="border-b border-slate-100"><td class="px-6 py-4 font-semibold text-lg">${item.icon || '🍲'} ${item.name}</td><td class="px-6 py-4 font-semibold text-slate-600">L. ${item.price.toFixed(2)}</td><td class="px-6 py-4 font-black text-emerald-600 text-lg">${item.stock}</td><td class="px-6 py-4 text-right flex justify-end gap-2"><button onclick="window.app.openEditModal('${item.id}')" class="bg-slate-100 text-slate-600 px-3 py-1 rounded hover:bg-slate-200 font-bold">✏️ Editar</button><button onclick="window.app.deleteProduct('${item.id}')" class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 font-bold">✖</button></td></tr>`; 
                 });
             },
 
-            // --- REPORTES Y GRÁFICOS (IGNORANDO ANULADAS) ---
+            // --- REPORTES ---
             getFilteredOrders(type) {
                 const now = new Date(); let startOfPeriod = new Date();
-                if(type === 'hoy') { startOfPeriod.setHours(0,0,0,0); } 
-                else if(type === 'semana') { const day = startOfPeriod.getDay(); const diff = startOfPeriod.getDate() - day + (day === 0 ? -6 : 1); startOfPeriod = new Date(startOfPeriod.setDate(diff)); startOfPeriod.setHours(0,0,0,0); } 
-                else if(type === 'mes') { startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1); } else { startOfPeriod = new Date(0); }
-                const validOrders = [];
-                [...this.state.salesHistory, ...this.state.activeOrders].forEach(order => {
-                    // Solo sumar órdenes si la fecha concuerda Y NO están anuladas
-                    if(order.dateObj >= startOfPeriod && order.status !== 'anulado') validOrders.push(order);
-                });
+                if(type === 'hoy') { startOfPeriod.setHours(0,0,0,0); } else if(type === 'semana') { const day = startOfPeriod.getDay(); const diff = startOfPeriod.getDate() - day + (day === 0 ? -6 : 1); startOfPeriod = new Date(startOfPeriod.setDate(diff)); startOfPeriod.setHours(0,0,0,0); } else if(type === 'mes') { startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1); } else { startOfPeriod = new Date(0); }
+                const validOrders = []; [...this.state.salesHistory, ...this.state.activeOrders].forEach(order => { if(order.dateObj >= startOfPeriod && order.status !== 'anulado') validOrders.push(order); });
                 return validOrders;
             },
 
             updateDashboard() {
+                if(!this.state.isAdmin) return;
                 let totalVentas = 0; let ordenesUnicas = new Set();
                 const ordersToday = this.getFilteredOrders('hoy');
                 ordersToday.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); });
@@ -425,73 +457,76 @@
             },
 
             renderChart() {
+                if(!this.state.isAdmin) return;
                 const ctx = document.getElementById('accountingChart').getContext('2d'); const agg = {};
                 let displayRevenue = 0; let displayCost = 0;
                 const filteredOrders = this.getFilteredOrders(this.state.reportFilter);
                 
-                filteredOrders.forEach(order => {
-                    order.items.forEach(item => {
-                        if(!agg[item.name]) agg[item.name] = { revenue: 0, cost: 0 };
-                        const itemRev = item.price * item.qty; const itemCost = item.cost * item.qty;
-                        agg[item.name].revenue += itemRev; agg[item.name].cost += itemCost;
-                        displayRevenue += itemRev; displayCost += itemCost;
-                    });
-                });
-
-                document.getElementById('report-revenue').innerText = `L. ${displayRevenue.toFixed(2)}`;
-                document.getElementById('report-cost').innerText = `L. ${displayCost.toFixed(2)}`;
-
+                filteredOrders.forEach(order => { order.items.forEach(item => { if(!agg[item.name]) agg[item.name] = { revenue: 0, cost: 0 }; const itemRev = item.price * item.qty; const itemCost = item.cost * item.qty; agg[item.name].revenue += itemRev; agg[item.name].cost += itemCost; displayRevenue += itemRev; displayCost += itemCost; }); });
+                document.getElementById('report-revenue').innerText = `L. ${displayRevenue.toFixed(2)}`; document.getElementById('report-cost').innerText = `L. ${displayCost.toFixed(2)}`;
                 const labels = Object.keys(agg); const costData = labels.map(l => agg[l].cost); const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
-                if (this.state.chartInstance) this.state.chartInstance.destroy();
-                if(labels.length === 0) return;
+                if (this.state.chartInstance) this.state.chartInstance.destroy(); if(labels.length === 0) return;
                 this.state.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia (L)', data: profitData, backgroundColor: '#10b981' }, { label: 'Costo (L)', data: costData, backgroundColor: '#f43f5e' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } });
             },
 
             downloadCSV() {
-                const validOrders = this.state.salesHistory.filter(o => o.status !== 'anulado');
-                if(validOrders.length === 0) { alert("No hay ventas válidas para exportar."); return; }
-                let csv = "data:text/csv;charset=utf-8,Orden,Fecha,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
-                validOrders.forEach(order => { 
-                    const fechaStr = order.dateObj.toLocaleString('es-HN');
-                    order.items.forEach(item => { csv += `${order.number},${fechaStr},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); 
-                });
+                const validOrders = this.state.salesHistory.filter(o => o.status !== 'anulado'); if(validOrders.length === 0) { alert("No hay ventas válidas para exportar."); return; }
+                let csv = "data:text/csv;charset=utf-8,Orden,Fecha,Cajero,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
+                validOrders.forEach(order => { const fechaStr = order.dateObj.toLocaleString('es-HN'); order.items.forEach(item => { csv += `${order.number},${fechaStr},${order.user},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); });
                 const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Reporte_Contable_SPS.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }
         };
 
         // --- INICIALIZACIÓN ---
         window.onload = () => {
-            window.app.renderPOSMenu();
             const firebaseConfig = { apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA", authDomain: "momb2b-3eb14.firebaseapp.com", projectId: "momb2b-3eb14", storageBucket: "momb2b-3eb14.firebasestorage.app", messagingSenderId: "440475320328", appId: "1:440475320328:web:4111a01d8e8fabbea891bd", measurementId: "G-Z0BYMW1H4W" };
-            try {
-                if (typeof firebase === 'undefined') throw new Error("Firebase bloqueado.");
-                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
+            
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            
+            // Detectar Estado de Autenticación
+            firebase.auth().onAuthStateChanged((user) => {
+                const loginScreen = document.getElementById('login-layout');
+                const appScreen = document.getElementById('app-layout');
 
-                db.collection("inventory").onSnapshot((snapshot) => {
-                    window.app.state.inventory = [];
-                    snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
-                    window.app.renderInventory(); window.app.renderPOSMenu(); window.app.updateDashboard();
-                });
+                if (user) {
+                    loginScreen.classList.add('hidden');
+                    appScreen.classList.remove('hidden');
+                    
+                    window.app.applyRoles(user);
+                    db = firebase.firestore();
 
-                db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
-                    window.app.state.activeOrders = []; window.app.state.salesHistory = [];
-                    snapshot.forEach((doc) => {
-                        const data = doc.data(); const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
-                        const order = { id: doc.id, dateObj: dateObj, ...data };
-                        if (order.status === 'preparando') window.app.state.activeOrders.push(order);
-                        // AHORA incluimos tanto 'listo' como 'anulado' en el historial para auditoría
-                        else if (order.status === 'listo' || order.status === 'anulado') window.app.state.salesHistory.push(order);
+                    // Cargar DB solo si hay sesión
+                    db.collection("inventory").onSnapshot((snapshot) => {
+                        window.app.state.inventory = [];
+                        snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
+                        if(window.app.state.isAdmin) { window.app.renderInventory(); window.app.updateDashboard(); }
+                        window.app.renderPOSMenu(); 
                     });
-                    
-                    window.app.state.orderCounter = snapshot.size + 1;
-                    const orderNumDisplay = document.getElementById('pos-order-number');
-                    if(orderNumDisplay) orderNumDisplay.innerText = window.app.state.orderCounter;
-                    
-                    window.app.renderKDS(); window.app.renderHistory(); window.app.updateDashboard();
-                    if(window.app.state.activeView === 'reportes') window.app.renderChart();
-                });
-            } catch (error) { console.error("Error DB:", error); }
+
+                    db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
+                        window.app.state.activeOrders = []; window.app.state.salesHistory = [];
+                        snapshot.forEach((doc) => {
+                            const data = doc.data(); const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                            const order = { id: doc.id, dateObj: dateObj, ...data };
+                            if (order.status === 'preparando') window.app.state.activeOrders.push(order);
+                            else if (order.status === 'listo' || order.status === 'anulado') window.app.state.salesHistory.push(order);
+                        });
+                        
+                        window.app.state.orderCounter = snapshot.size + 1;
+                        const orderNumDisplay = document.getElementById('pos-order-number');
+                        if(orderNumDisplay) orderNumDisplay.innerText = window.app.state.orderCounter;
+                        
+                        window.app.renderKDS(); 
+                        if(window.app.state.isAdmin) {
+                            window.app.renderHistory(); window.app.updateDashboard();
+                            if(window.app.state.activeView === 'reportes') window.app.renderChart();
+                        }
+                    });
+                } else {
+                    loginScreen.classList.remove('hidden');
+                    appScreen.classList.add('hidden');
+                }
+            });
         };
     </script>
 </body>
