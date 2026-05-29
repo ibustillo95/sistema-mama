@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sazón SPS - ERP NextGen</title>
-    
+    <title>Sazón SPS — ERP NextGen</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -14,26 +14,76 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        
-        .chart-container { position: relative; width: 100%; max-width: 800px; margin: 0 auto; height: 40vh; max-height: 400px; min-height: 250px; }
+
+        .chart-container { position: relative; width: 100%; height: 40vh; max-height: 380px; min-height: 240px; }
+        .chart-sm { position: relative; width: 100%; height: 220px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; color: #94a3b8; border-radius: 0.75rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.3s ease; font-weight: 500;}
-        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: white; transform: translateX(4px); }
+        .nav-item { display: flex; align-items: center; padding: 0.7rem 1rem; color: #94a3b8; border-radius: 0.75rem; margin-bottom: 0.25rem; cursor: pointer; transition: all 0.25s ease; font-weight: 500; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.06); color: white; transform: translateX(4px); }
         .nav-item.active { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; font-weight: 700; box-shadow: 0 4px 15px -3px rgba(245, 158, 11, 0.4); }
-        
+
         .filter-btn.active { background-color: #0f172a; color: white; box-shadow: 0 2px 10px -2px rgba(0,0,0,0.2); }
         .xui-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .xui-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .xui-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+
+        .cat-pill { transition: all .2s; }
+        .cat-pill.active { background: #0f172a; color: white; border-color: #0f172a; }
+
+        .cfg-tab { transition: all .2s; }
+        .cfg-tab.active { background: white; color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,.08); font-weight: 800; }
+
+        .ord-type { transition: all .2s; }
+        .ord-type.active { background: #0f172a; color: white; border-color: #0f172a; }
+
+        @keyframes slide-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast { animation: slide-in 0.3s ease-out; }
+        @keyframes fade-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+        .animate-fade-in { animation: fade-in 0.25s ease-out; }
+        @keyframes pulse-amber { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .5); } 50% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); } }
+        .pulse-amber { animation: pulse-amber 2s infinite; }
+
+        .icon-pick { font-size: 22px; padding: 6px 8px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; text-align: center; }
+        .icon-pick:hover { background: #f1f5f9; }
+        .icon-pick.selected { border-color: #f59e0b; background: #fef3c7; }
+
+        @media print {
+            body * { visibility: hidden !important; }
+            #print-area, #print-area * { visibility: visible !important; }
+            #print-area { position: absolute !important; left: 0; top: 0; width: 80mm; background: white; padding: 0; }
+            .receipt { font-family: 'Courier New', monospace; color: black; font-size: 11px; line-height: 1.4; }
+            .receipt h1 { font-size: 14px; font-weight: 900; }
+            .receipt hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+        }
     </style>
 </head>
 <body class="text-slate-800 overflow-hidden h-screen w-screen selection:bg-amber-200 selection:text-amber-900">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] space-y-3 max-w-sm w-[360px]"></div>
+
+    <!-- CONFIRM MODAL (reemplaza confirm() nativo) -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-[95] p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-fade-in">
+            <div class="text-5xl mb-4 text-center" id="confirm-icon">⚠️</div>
+            <h3 class="font-black text-xl text-center text-slate-800 mb-2" id="confirm-title">Confirmar</h3>
+            <p class="text-slate-500 text-center mb-6 leading-relaxed" id="confirm-msg"></p>
+            <div id="confirm-input-wrap" class="hidden mb-6">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Motivo</label>
+                <input type="text" id="confirm-input" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium text-slate-700">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="window.app._confirmResolve(false)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button>
+                <button onclick="window.app._confirmResolve(true)" id="confirm-ok" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-black py-3 rounded-xl transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- PANTALLA DE LOGIN -->
     <div id="login-layout" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
@@ -43,7 +93,6 @@
                 <h1 class="text-3xl font-black text-slate-800 tracking-tight">Sazón SPS</h1>
                 <p class="text-slate-500 font-medium mt-1 uppercase tracking-widest text-xs">Sistema de Gestión</p>
             </div>
-            
             <form onsubmit="window.app.login(event)" class="space-y-6">
                 <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Correo Electrónico</label><input type="email" id="login-email" required placeholder="ejemplo@sazonsps.com" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 outline-none focus:border-amber-500 focus:bg-white transition-all text-slate-700 font-medium"></div>
                 <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Contraseña</label><input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 outline-none focus:border-amber-500 focus:bg-white transition-all text-slate-700 font-medium"></div>
@@ -52,9 +101,9 @@
         </div>
     </div>
 
-    <!-- APLICACIÓN PRINCIPAL (ERP) -->
+    <!-- APLICACIÓN PRINCIPAL -->
     <div id="app-layout" class="hidden h-screen flex w-full">
-        
+
         <!-- SIDEBAR -->
         <aside class="w-72 bg-[#0f172a] flex flex-col shadow-2xl z-20 hidden md:flex h-full border-r border-slate-800">
             <div class="p-8 flex items-center gap-4">
@@ -65,103 +114,358 @@
                 </div>
             </div>
             <nav class="flex-1 px-4 py-2 overflow-y-auto space-y-1">
-                <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active"><span class="mr-3 text-xl opacity-80">🏠</span> Inicio</div>
-                
-                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-8 mb-3 px-3">Terminal</div>
+                <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item"><span class="mr-3 text-xl opacity-80">🏠</span> Inicio</div>
+
+                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-6 mb-2 px-3">Terminal</div>
                 <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item"><span class="mr-3 text-xl opacity-80">🛒</span> Punto de Venta</div>
                 <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item justify-between"><div class="flex"><span class="mr-3 text-xl opacity-80">👨‍🍳</span> Cocina</div><span id="kds-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm hidden">0</span></div>
-                
-                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-8 mb-3 px-3" id="nav-group-admin">Administración</div>
+
+                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-6 mb-2 px-3" id="nav-group-admin">Administración</div>
                 <div onclick="window.app.switchView('historial')" id="nav-historial" class="nav-item"><span class="mr-3 text-xl opacity-80">🧾</span> Historial</div>
+                <div onclick="window.app.switchView('cierre')" id="nav-cierre" class="nav-item"><span class="mr-3 text-xl opacity-80">💼</span> Cierre de Caja</div>
                 <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item"><span class="mr-3 text-xl opacity-80">📦</span> Inventario</div>
                 <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item"><span class="mr-3 text-xl opacity-80">📊</span> Reportes</div>
-                
-                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-8 mb-3 px-3">Sistema</div>
+
+                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-6 mb-2 px-3">Sistema</div>
                 <div onclick="window.app.switchView('configuracion')" id="nav-configuracion" class="nav-item"><span class="mr-3 text-xl opacity-80">⚙️</span> Configuración</div>
                 <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item"><span class="mr-3 text-xl opacity-80">📚</span> Guía Legal</div>
             </nav>
-            <div class="p-6">
+            <div class="p-5 space-y-2">
+                <div id="cai-status" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+                    <span class="text-base">⚠️</span><span id="cai-status-text">CAI pendiente</span>
+                </div>
                 <button onclick="window.app.logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/50 font-bold py-3 rounded-xl transition-all">Cerrar Sesión</button>
             </div>
         </aside>
 
-        <!-- ÁREA PRINCIPAL DE CONTENIDO -->
+        <!-- MAIN -->
         <main class="flex-1 h-screen overflow-y-auto relative bg-slate-50/50">
-            
             <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
                 <div class="font-bold text-lg flex items-center gap-2"><span class="text-xl">🍲</span> Sazón SPS</div>
-                <div class="flex gap-2 items-center">
-                    <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded-lg p-2 text-sm font-semibold outline-none" onchange="window.app.switchView(this.value)">
-                        <option value="dashboard">Inicio</option><option value="pos">Caja POS</option><option value="kds">Cocina KDS</option><option value="historial">Historial</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option><option value="configuracion">Configuración</option>
-                    </select>
-                </div>
+                <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded-lg p-2 text-sm font-semibold outline-none" onchange="window.app.switchView(this.value)">
+                    <option value="dashboard">Inicio</option><option value="pos">POS</option><option value="kds">Cocina</option><option value="historial">Historial</option><option value="cierre">Cierre Caja</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option><option value="configuracion">Configuración</option><option value="guia">Guía Legal</option>
+                </select>
             </header>
 
             <div class="p-4 md:p-8 max-w-[1400px] mx-auto">
-                
-                <!-- 1. DASHBOARD XUI -->
-                <div id="view-dashboard" class="block animate-fade-in">
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-black text-slate-800 tracking-tight">Panel de Control</h2>
-                        <p class="text-slate-500 font-medium mt-1" id="dash-date">Cargando fecha...</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 shadow-2xl relative overflow-hidden xui-card border border-slate-700"><div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-emerald-500 opacity-20 blur-2xl"></div><div class="relative z-10"><div class="flex items-center gap-3 mb-4"><div class="bg-slate-700/50 p-2 rounded-lg"><span class="text-xl">💰</span></div><div class="text-sm text-slate-300 font-bold uppercase tracking-wider">Caja (Hoy)</div></div><div class="text-5xl font-black text-white tracking-tighter" id="dash-ventas">L. 0.00</div><div class="mt-4 text-emerald-400 text-sm font-semibold flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg> En tiempo real</div></div></div>
-                        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 shadow-xl shadow-amber-500/20 relative overflow-hidden xui-card border border-amber-400"><div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-20 blur-2xl"></div><div class="relative z-10"><div class="flex items-center gap-3 mb-4"><div class="bg-white/20 p-2 rounded-lg"><span class="text-xl">🧾</span></div><div class="text-sm text-amber-50 font-bold uppercase tracking-wider">Facturación</div></div><div class="text-5xl font-black text-white tracking-tighter"><span id="dash-ordenes">0</span> <span class="text-2xl font-bold opacity-80 text-amber-100">tickets</span></div></div></div>
-                        <div class="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 relative overflow-hidden xui-card border border-slate-100"><div class="relative z-10"><div class="flex items-center gap-3 mb-4"><div class="bg-rose-100 p-2 rounded-lg"><span class="text-xl">⚠️</span></div><div class="text-sm text-slate-500 font-bold uppercase tracking-wider">Avisos de Stock</div></div><div class="text-5xl font-black text-slate-800 tracking-tighter" id="dash-alertas">0</div><div class="mt-4 text-slate-500 text-sm font-semibold">Productos por agotarse</div></div></div>
-                    </div>
-                </div>
 
-                <!-- 2. PUNTO DE VENTA (POS) -->
-                <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
-                    <div class="flex flex-col lg:flex-row gap-6 h-full">
-                        <div class="lg:w-2/3 bg-white rounded-3xl shadow-xl shadow-slate-200/50 flex flex-col h-full border border-slate-100 overflow-hidden"><div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white"><h3 class="font-black text-xl text-slate-800 tracking-tight">Menú</h3></div><div class="p-6 overflow-y-auto flex-1 bg-slate-50/50"><div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5"></div></div></div>
-                        <div class="lg:w-1/3 bg-white rounded-3xl shadow-xl shadow-slate-200/50 flex flex-col h-full border border-slate-100 overflow-hidden">
-                            <div class="p-6 border-b border-slate-100 bg-slate-800 text-white flex justify-between items-center"><h3 class="font-bold text-lg">Orden Actual</h3><span class="bg-white/20 px-3 py-1 rounded-lg font-black tracking-widest text-sm">#<span id="pos-order-number">1</span></span></div>
-                            <div id="cart-items" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/50"></div>
-                            <div class="p-6 bg-white border-t border-slate-100"><div class="flex justify-between items-end mb-6"><span class="text-slate-500 font-bold uppercase tracking-wider text-sm">Total a pagar</span><span class="font-black text-4xl text-slate-800 tracking-tighter" id="cart-total">L. 0.00</span></div><button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:shadow-none text-xl tracking-wider" disabled>COBRAR ORDEN</button></div>
+                <!-- 1. DASHBOARD -->
+                <div id="view-dashboard" class="hidden animate-fade-in">
+                    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Panel de Control</h2>
+                            <p class="text-slate-500 font-medium mt-1" id="dash-date">Cargando fecha...</p>
+                        </div>
+                        <div id="dash-compare" class="text-sm text-slate-500 font-semibold"></div>
+                    </div>
+
+                    <!-- KPIs principales -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden xui-card border border-slate-700">
+                            <div class="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-emerald-500 opacity-20 blur-2xl"></div>
+                            <div class="relative z-10">
+                                <div class="flex items-center gap-2 mb-3"><div class="bg-slate-700/50 p-2 rounded-lg"><span class="text-lg">💰</span></div><div class="text-xs text-slate-300 font-bold uppercase tracking-wider">Ventas Hoy</div></div>
+                                <div class="text-3xl font-black text-white tracking-tighter" id="dash-ventas">L. 0.00</div>
+                                <div class="mt-2 text-emerald-400 text-xs font-semibold flex items-center gap-1" id="dash-ventas-vs">— vs ayer</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-6 shadow-xl shadow-amber-500/20 relative overflow-hidden xui-card border border-amber-400">
+                            <div class="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white opacity-20 blur-2xl"></div>
+                            <div class="relative z-10">
+                                <div class="flex items-center gap-2 mb-3"><div class="bg-white/20 p-2 rounded-lg"><span class="text-lg">🧾</span></div><div class="text-xs text-amber-50 font-bold uppercase tracking-wider">Tickets</div></div>
+                                <div class="text-3xl font-black text-white tracking-tighter"><span id="dash-ordenes">0</span></div>
+                                <div class="mt-2 text-amber-100 text-xs font-semibold" id="dash-ticket-prom">Ticket prom. L. 0.00</div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 xui-card">
+                            <div class="flex items-center gap-2 mb-3"><div class="bg-emerald-100 p-2 rounded-lg"><span class="text-lg">📈</span></div><div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Ganancia Hoy</div></div>
+                            <div class="text-3xl font-black text-emerald-600 tracking-tighter" id="dash-ganancia">L. 0.00</div>
+                            <div class="mt-2 text-slate-400 text-xs font-semibold" id="dash-margen">Margen 0%</div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 xui-card">
+                            <div class="flex items-center gap-2 mb-3"><div class="bg-rose-100 p-2 rounded-lg"><span class="text-lg">⚠️</span></div><div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Stock Bajo</div></div>
+                            <div class="text-3xl font-black text-slate-800 tracking-tighter" id="dash-alertas">0</div>
+                            <div class="mt-2 text-slate-400 text-xs font-semibold">Productos por agotarse</div>
+                        </div>
+                    </div>
+
+                    <!-- Detalle -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-black text-slate-800">Ventas por hora — Hoy</h3>
+                                <span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Lempiras</span>
+                            </div>
+                            <div class="chart-sm"><canvas id="dashHourlyChart"></canvas></div>
+                        </div>
+                        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+                            <h3 class="font-black text-slate-800 mb-4">Top 5 — Hoy</h3>
+                            <div id="dash-top-sellers" class="space-y-3"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. KDS (Cocina) -->
+                <!-- 2. POS -->
+                <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
+                    <div class="flex flex-col lg:flex-row gap-6 h-full">
+                        <!-- Menú -->
+                        <div class="lg:w-2/3 bg-white rounded-3xl shadow-xl shadow-slate-200/50 flex flex-col h-full border border-slate-100 overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex flex-col gap-3 bg-white">
+                                <div class="flex items-center gap-3">
+                                    <h3 class="font-black text-xl text-slate-800 tracking-tight whitespace-nowrap">Menú</h3>
+                                    <input type="text" id="pos-search" oninput="window.app.setPOSSearch(this.value)" placeholder="🔍 Buscar platillo..." class="flex-1 bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-amber-500 focus:bg-white font-medium text-sm">
+                                </div>
+                                <div id="pos-categories" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+                            </div>
+                            <div class="p-5 overflow-y-auto flex-1 bg-slate-50/50">
+                                <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Orden -->
+                        <div class="lg:w-1/3 bg-white rounded-3xl shadow-xl shadow-slate-200/50 flex flex-col h-full border border-slate-100 overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 bg-slate-800 text-white flex justify-between items-center">
+                                <h3 class="font-bold text-lg">Orden Actual</h3>
+                                <span class="bg-white/20 px-3 py-1 rounded-lg font-black tracking-widest text-sm">#<span id="pos-order-number">1</span></span>
+                            </div>
+                            <div class="px-5 pt-4">
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Tipo de orden</div>
+                                <div class="flex gap-2">
+                                    <button onclick="window.app.setOrderType('mesa')" data-type="mesa" class="ord-type active flex-1 border-2 border-slate-200 rounded-xl py-2 text-xs font-bold text-slate-700">🍽️ Mesa</button>
+                                    <button onclick="window.app.setOrderType('llevar')" data-type="llevar" class="ord-type flex-1 border-2 border-slate-200 rounded-xl py-2 text-xs font-bold text-slate-700">🥡 Llevar</button>
+                                    <button onclick="window.app.setOrderType('delivery')" data-type="delivery" class="ord-type flex-1 border-2 border-slate-200 rounded-xl py-2 text-xs font-bold text-slate-700">🛵 Delivery</button>
+                                </div>
+                                <div id="table-input-wrap" class="mt-3">
+                                    <input type="text" id="pos-table" placeholder="N° de mesa (opcional)" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-500">
+                                </div>
+                            </div>
+                            <div id="cart-items" class="flex-1 px-5 py-4 overflow-y-auto space-y-3 bg-slate-50/50 mt-2"></div>
+                            <div class="px-5 py-4 bg-white border-t border-slate-100">
+                                <div class="space-y-1 mb-3 text-sm">
+                                    <div class="flex justify-between text-slate-500"><span>Subtotal</span><span id="cart-subtotal" class="font-semibold">L. 0.00</span></div>
+                                    <div class="flex justify-between text-slate-500"><span>ISV (<span id="cart-isv-rate">15</span>%)</span><span id="cart-isv" class="font-semibold">L. 0.00</span></div>
+                                </div>
+                                <div class="flex justify-between items-end mb-4"><span class="text-slate-700 font-bold uppercase tracking-wider text-sm">Total</span><span class="font-black text-3xl text-slate-800 tracking-tighter" id="cart-total">L. 0.00</span></div>
+                                <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:shadow-none text-lg tracking-wider" disabled>COBRAR ORDEN</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. KDS -->
                 <div id="view-kds" class="hidden h-[calc(100vh-8rem)] flex flex-col">
                     <div class="flex justify-between items-center mb-6"><div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Línea de Producción</h2><p class="text-slate-500 font-medium">Las órdenes se ordenan automáticamente por tiempo de espera.</p></div><span class="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md">En cola: <span id="kds-count" class="text-amber-400 font-black text-lg ml-1">0</span></span></div>
                     <div id="kds-empty" class="flex-1 flex flex-col items-center justify-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-300"><span class="text-7xl mb-6 opacity-50">👨‍🍳</span><h3 class="text-2xl font-bold text-slate-500">Cocina Despejada</h3><p class="mt-2">No hay órdenes pendientes en este momento.</p></div>
                     <div id="kds-grid" class="flex-1 hidden flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 snap-x items-start no-scrollbar"></div>
                 </div>
 
-                <!-- 3.5 HISTORIAL DE ÓRDENES -->
+                <!-- 3.5 HISTORIAL -->
                 <div id="view-historial" class="hidden">
-                    <div class="mb-8"><h2 class="text-3xl font-black text-slate-800 tracking-tight">Auditoría de Ventas</h2><p class="text-slate-500 font-medium mt-1">Consulta y anulación de facturas emitidas.</p></div>
-                    <div id="historial-empty" class="text-center text-slate-400 py-20 bg-white rounded-3xl border border-slate-200"><span class="text-5xl mb-4 block opacity-50">🧾</span>Aún no hay órdenes registradas.</div>
-                    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden hidden" id="historial-container"><table class="min-w-full divide-y divide-slate-100"><thead class="bg-slate-50/80"><tr><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Factura / Fecha</th><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle del Pedido</th><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cajero / Pago</th><th class="px-8 py-5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Monto Total</th><th class="px-8 py-5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th></tr></thead><tbody id="historial-tbody" class="bg-white divide-y divide-slate-50"></tbody></table></div>
+                    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Auditoría de Ventas</h2><p class="text-slate-500 font-medium mt-1">Consulta, reimpresión y anulación de facturas emitidas.</p></div>
+                        <div class="flex bg-slate-200/80 p-1.5 rounded-xl shadow-inner">
+                            <button onclick="window.app.setHistoryFilter('hoy')" id="hist-hoy" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold">Hoy</button>
+                            <button onclick="window.app.setHistoryFilter('semana')" id="hist-semana" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Semana</button>
+                            <button onclick="window.app.setHistoryFilter('mes')" id="hist-mes" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Mes</button>
+                            <button onclick="window.app.setHistoryFilter('todos')" id="hist-todos" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Todos</button>
+                        </div>
+                    </div>
+                    <div id="historial-empty" class="text-center text-slate-400 py-20 bg-white rounded-3xl border border-slate-200"><span class="text-5xl mb-4 block opacity-50">🧾</span>Sin órdenes para este período.</div>
+                    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden hidden" id="historial-container">
+                        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-100"><thead class="bg-slate-50/80"><tr><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Factura / Fecha</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Detalle</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cajero / Pago</th><th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Total</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th></tr></thead><tbody id="historial-tbody" class="bg-white divide-y divide-slate-50"></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- 3.6 CIERRE DE CAJA -->
+                <div id="view-cierre" class="hidden">
+                    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Cierre de Caja</h2><p class="text-slate-500 font-medium mt-1">Corte Z y arqueo del período seleccionado.</p></div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex bg-slate-200/80 p-1.5 rounded-xl shadow-inner">
+                                <button onclick="window.app.setCierreFilter('hoy')" id="cierre-hoy" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold">Hoy</button>
+                                <button onclick="window.app.setCierreFilter('ayer')" id="cierre-ayer" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Ayer</button>
+                                <button onclick="window.app.setCierreFilter('semana')" id="cierre-semana" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Semana</button>
+                            </div>
+                            <button onclick="window.app.printCierre()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2"><span>🖨️</span> Imprimir</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tickets</div><div class="text-2xl font-black text-slate-800 mt-1" id="cierre-tickets">0</div></div>
+                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efectivo</div><div class="text-2xl font-black text-emerald-600 mt-1" id="cierre-efectivo">L. 0.00</div></div>
+                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tarjeta</div><div class="text-2xl font-black text-blue-600 mt-1" id="cierre-tarjeta">L. 0.00</div></div>
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 shadow text-white"><div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Total Bruto</div><div class="text-2xl font-black mt-1" id="cierre-total">L. 0.00</div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+                            <h3 class="font-black text-slate-800 mb-4">Desglose Contable</h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between"><span class="text-slate-500">Subtotal (sin ISV)</span><span class="font-bold text-slate-800" id="cierre-subtotal">L. 0.00</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">ISV cobrado (15%)</span><span class="font-bold text-amber-600" id="cierre-isv">L. 0.00</span></div>
+                                <div class="flex justify-between border-t border-slate-100 pt-3"><span class="text-slate-500">Costo de productos</span><span class="font-bold text-rose-500" id="cierre-costo">L. 0.00</span></div>
+                                <div class="flex justify-between border-t-2 border-slate-200 pt-3"><span class="text-slate-700 font-bold">Ganancia neta</span><span class="font-black text-emerald-600 text-lg" id="cierre-ganancia">L. 0.00</span></div>
+                                <div class="flex justify-between text-xs text-slate-400"><span>Anuladas</span><span id="cierre-anuladas">0 facturas</span></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+                            <h3 class="font-black text-slate-800 mb-4">Arqueo de Efectivo</h3>
+                            <div class="space-y-3">
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fondo inicial (L.)</label><input type="number" id="arqueo-fondo" oninput="window.app.calcArqueo()" min="0" step="0.01" placeholder="0.00" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-bold"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Efectivo esperado</label><div class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl p-3 font-black text-xl text-slate-800" id="arqueo-esperado">L. 0.00</div></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Efectivo contado (L.)</label><input type="number" id="arqueo-contado" oninput="window.app.calcArqueo()" min="0" step="0.01" placeholder="0.00" class="w-full bg-white border-2 border-emerald-300 rounded-xl p-3 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500"></div>
+                                <div class="bg-slate-800 rounded-xl p-4 text-white flex justify-between items-center"><span class="font-bold text-sm uppercase tracking-widest text-slate-300">Diferencia</span><span class="font-black text-2xl" id="arqueo-dif">L. 0.00</span></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 4. INVENTARIO -->
                 <div id="view-inventario" class="hidden">
-                    <div class="mb-8"><h2 class="text-3xl font-black text-slate-800 tracking-tight">Almacén y Precios</h2></div>
-                    <div class="bg-slate-800 p-8 rounded-3xl shadow-xl mb-8 border border-slate-700 text-white"><h3 class="font-bold text-lg mb-6 flex items-center gap-2"><span class="text-amber-400">➕</span> Registrar Nuevo Producto</h3><form onsubmit="window.app.addProduct(event)" class="grid grid-cols-1 md:grid-cols-6 gap-5 items-end"><div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Nombre del Platillo</label><input type="text" id="new-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-amber-500 text-white font-medium"></div><div><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Precio Venta (L)</label><input type="number" id="new-price" required min="1" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-emerald-500 text-white font-bold"></div><div><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Costo Real (L)</label><input type="number" id="new-cost" required min="0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-rose-500 text-white font-bold"></div><div><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Stock / Porciones</label><input type="number" id="new-stock" required min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-amber-500 text-white font-bold"></div><div class="md:col-span-1"><button type="submit" id="btn-save-product" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-black py-3 rounded-xl transition-colors">CREAR</button></div></form></div>
-                    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"><table class="min-w-full divide-y divide-slate-100"><thead class="bg-slate-50/80"><tr><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Producto en Menú</th><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Precio / Costo</th><th class="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Disponibilidad</th><th class="px-8 py-5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Administración</th></tr></thead><tbody id="inventory-tbody" class="bg-white divide-y divide-slate-50"></tbody></table></div>
+                    <div class="mb-8"><h2 class="text-3xl font-black text-slate-800 tracking-tight">Almacén y Precios</h2><p class="text-slate-500 font-medium mt-1">Catálogo del menú, costos y disponibilidad.</p></div>
+
+                    <div class="bg-slate-800 p-6 rounded-3xl shadow-xl mb-8 border border-slate-700 text-white">
+                        <h3 class="font-bold text-lg mb-5 flex items-center gap-2"><span class="text-amber-400">➕</span> Registrar Nuevo Producto</h3>
+                        <form onsubmit="window.app.addProduct(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                <div class="md:col-span-4"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Nombre</label><input type="text" id="new-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-amber-500 text-white font-medium"></div>
+                                <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Categoría</label><select id="new-category" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-amber-500 text-white font-medium"></select></div>
+                                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Precio Venta</label><input type="number" id="new-price" required min="0.01" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-emerald-500 text-white font-bold"></div>
+                                <div class="md:col-span-1"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Costo</label><input type="number" id="new-cost" required min="0" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-rose-500 text-white font-bold"></div>
+                                <div class="md:col-span-1"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Stock</label><input type="number" id="new-stock" required min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-amber-500 text-white font-bold"></div>
+                                <div class="md:col-span-1"><button type="submit" id="btn-save-product" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-black py-3 rounded-xl transition-colors">CREAR</button></div>
+                            </div>
+                            <div><div class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Icono</div><div id="new-icon-grid" class="bg-slate-900 border border-slate-700 rounded-xl p-2 flex flex-wrap gap-1 max-h-24 overflow-y-auto"></div><input type="hidden" id="new-icon" value="🍲"></div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                            <input type="text" id="inv-search" oninput="window.app.setInvSearch(this.value)" placeholder="🔍 Buscar producto..." class="flex-1 bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2 outline-none focus:border-amber-500 text-sm font-medium">
+                            <select id="inv-category" onchange="window.app.setInvCategory(this.value)" class="bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-amber-500"></select>
+                        </div>
+                        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-100"><thead class="bg-slate-50/80"><tr><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Producto</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Precio / Costo / Margen</th><th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Stock</th><th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th></tr></thead><tbody id="inventory-tbody" class="bg-white divide-y divide-slate-50"></tbody></table></div>
+                    </div>
                 </div>
 
                 <!-- 5. REPORTES -->
                 <div id="view-reportes" class="hidden">
-                    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6"><div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Finanzas</h2><p class="text-slate-500 font-medium mt-1">Análisis de rentabilidad basado en ventas completadas.</p></div><div class="flex items-center gap-4"><div class="flex bg-slate-200/80 p-1.5 rounded-xl shadow-inner"><button onclick="window.app.setReportFilter('hoy')" id="filter-hoy" class="filter-btn active px-5 py-2 rounded-lg text-sm font-bold transition-all">Hoy</button><button onclick="window.app.setReportFilter('semana')" id="filter-semana" class="filter-btn px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">Semana</button><button onclick="window.app.setReportFilter('mes')" id="filter-mes" class="filter-btn px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">Mes</button></div><button onclick="window.app.downloadCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-colors flex items-center gap-2"><span>📥</span> Excel</button></div></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col justify-center"><span class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Ingreso Bruto</span><span class="text-3xl font-black text-slate-800 tracking-tighter" id="report-revenue">L. 0.00</span></div><div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col justify-center"><span class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Costo Estimado</span><span class="text-3xl font-black text-rose-500 tracking-tighter" id="report-cost">L. 0.00</span></div><div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl shadow-lg shadow-emerald-500/30 flex flex-col justify-center text-white"><span class="text-xs font-bold text-emerald-100 uppercase tracking-widest mb-1">Ganancia Neta</span><span class="text-3xl font-black tracking-tighter" id="report-profit">L. 0.00</span></div></div>
-                    <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100"><div class="chart-container"><canvas id="accountingChart"></canvas></div></div>
+                    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Finanzas y Reportes</h2><p class="text-slate-500 font-medium mt-1">Análisis de rentabilidad y comportamiento de ventas.</p></div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex bg-slate-200/80 p-1.5 rounded-xl shadow-inner">
+                                <button onclick="window.app.setReportFilter('hoy')" id="filter-hoy" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold">Hoy</button>
+                                <button onclick="window.app.setReportFilter('semana')" id="filter-semana" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Semana</button>
+                                <button onclick="window.app.setReportFilter('mes')" id="filter-mes" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Mes</button>
+                                <button onclick="window.app.setReportFilter('todos')" id="filter-todos" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Todos</button>
+                            </div>
+                            <button onclick="window.app.downloadCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2"><span>📥</span> CSV</button>
+                        </div>
+                    </div>
+
+                    <!-- KPIs -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-lg border border-slate-100"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ingreso Bruto</span><div class="text-2xl font-black text-slate-800 mt-1" id="report-revenue">L. 0.00</div></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-lg border border-slate-100"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISV cobrado</span><div class="text-2xl font-black text-amber-600 mt-1" id="report-isv">L. 0.00</div></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-lg border border-slate-100"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Costo</span><div class="text-2xl font-black text-rose-500 mt-1" id="report-cost">L. 0.00</div></div>
+                        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-2xl shadow-lg text-white"><span class="text-[10px] font-bold text-emerald-100 uppercase tracking-widest">Ganancia</span><div class="text-2xl font-black mt-1" id="report-profit">L. 0.00</div></div>
+                        <div class="bg-white p-5 rounded-2xl shadow-lg border border-slate-100"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ticket Prom.</span><div class="text-2xl font-black text-slate-800 mt-1" id="report-avg">L. 0.00</div></div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 class="font-black text-slate-800 mb-4">Ventas por hora</h3>
+                            <div class="chart-sm"><canvas id="reportHourlyChart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 class="font-black text-slate-800 mb-4">Método de pago</h3>
+                            <div class="chart-sm"><canvas id="reportPaymentChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 class="font-black text-slate-800 mb-4">Top 10 productos</h3>
+                            <div class="chart-container"><canvas id="reportTopChart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 class="font-black text-slate-800 mb-4">Ganancia vs Costo por producto</h3>
+                            <div class="chart-container"><canvas id="accountingChart"></canvas></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 6. CONFIGURACIÓN (NUEVO) -->
+                <!-- 6. CONFIGURACIÓN -->
                 <div id="view-configuracion" class="hidden">
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-black text-slate-800 tracking-tight">Configuración del Sistema</h2>
-                        <p class="text-slate-500 font-medium mt-1">Ajuste de parámetros y reglas de negocio.</p>
+                    <div class="mb-8"><h2 class="text-3xl font-black text-slate-800 tracking-tight">Configuración del Sistema</h2><p class="text-slate-500 font-medium mt-1">Ajuste de parámetros, datos fiscales y reglas de negocio.</p></div>
+
+                    <div class="bg-slate-100 p-1.5 rounded-xl inline-flex gap-1 mb-6 shadow-inner">
+                        <button onclick="window.app.switchConfigTab('fiscal')" id="cfgtab-fiscal" class="cfg-tab active px-5 py-2 rounded-lg text-sm font-bold text-slate-500">🧾 Datos Fiscales / CAI</button>
+                        <button onclick="window.app.switchConfigTab('kds')" id="cfgtab-kds" class="cfg-tab px-5 py-2 rounded-lg text-sm font-bold text-slate-500">⏱️ Cocina (KDS)</button>
+                        <button onclick="window.app.switchConfigTab('negocio')" id="cfgtab-negocio" class="cfg-tab px-5 py-2 rounded-lg text-sm font-bold text-slate-500">⚙️ Reglas de Negocio</button>
                     </div>
-                    
-                    <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-3xl xui-card">
+
+                    <!-- Tab Fiscal -->
+                    <div id="cfg-fiscal" class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-5xl">
+                        <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                            <span class="text-2xl">📋</span>
+                            <div class="text-sm text-amber-900">
+                                <p class="font-bold mb-1">CAI en proceso de entrega — Estructura lista</p>
+                                <p>Cuando el SAR entregue el CAI definitivo, complete estos campos. El sistema generará automáticamente la numeración correlativa y la imprimirá en cada factura.</p>
+                            </div>
+                        </div>
+                        <form onsubmit="window.app.saveFiscalConfig(event)" class="space-y-8">
+                            <div>
+                                <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2"><span class="text-slate-400">🏢</span> Identificación del Negocio</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Razón Social</label><input type="text" id="fcfg-razonSocial" placeholder="Sazón SPS, S. de R.L." class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">RTN del Negocio</label><input type="text" id="fcfg-rtn" placeholder="0801-XXXX-XXXXXX" maxlength="16" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-mono font-bold"></div>
+                                    <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Dirección Fiscal</label><input type="text" id="fcfg-direccion" placeholder="Col. XXX, San Pedro Sula, Cortés" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Teléfono</label><input type="text" id="fcfg-telefono" placeholder="+504 XXXX-XXXX" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Correo</label><input type="email" id="fcfg-correo" placeholder="facturacion@sazonsps.com" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium"></div>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-100 pt-8">
+                                <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2"><span class="text-slate-400">🔑</span> CAI — Clave de Autorización de Impresión</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Número de CAI</label><input type="text" id="fcfg-cai" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX-XX" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-mono font-bold tracking-wider"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Fecha límite de emisión</label><input type="date" id="fcfg-fechaLimite" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-bold"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Tipo de Documento</label><select id="fcfg-tipoDoc" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-medium"><option value="factura">Factura</option><option value="proforma">Pro-forma</option><option value="recibo">Recibo</option></select></div>
+                                </div>
+
+                                <div class="mt-6 bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                                    <h4 class="font-bold text-slate-700 text-sm mb-4">Rango Autorizado de Numeración</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Prefijo (Establecimiento-Pto.Emisión-Doc.)</label><input type="text" id="fcfg-prefix" placeholder="000-001-01" maxlength="10" class="w-full bg-white border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-mono font-bold text-center"></div>
+                                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Desde N°</label><input type="number" id="fcfg-rangoFrom" placeholder="1" min="1" class="w-full bg-white border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-bold text-center"></div>
+                                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Hasta N°</label><input type="number" id="fcfg-rangoTo" placeholder="10000" min="1" class="w-full bg-white border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-bold text-center"></div>
+                                    </div>
+                                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="bg-white rounded-xl p-4 border border-slate-200">
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Próxima factura a emitir</div>
+                                            <div class="font-mono font-black text-xl text-slate-800" id="fcfg-preview-next">000-001-01-00000001</div>
+                                        </div>
+                                        <div class="bg-white rounded-xl p-4 border border-slate-200">
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Facturas emitidas / disponibles</div>
+                                            <div class="font-black text-xl text-slate-800" id="fcfg-preview-stock">0 / 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-100 pt-6 flex justify-end gap-3">
+                                <button type="button" onclick="window.app.previewTicket()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl">👁️ Previsualizar factura</button>
+                                <button type="submit" id="btn-save-fiscal" class="bg-slate-800 hover:bg-slate-900 text-white font-black py-3 px-8 rounded-xl shadow-lg">Guardar Datos Fiscales</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab KDS -->
+                    <div id="cfg-kds" class="hidden bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-3xl">
                         <h3 class="font-bold text-xl mb-6 flex items-center gap-2 text-slate-800 border-b border-slate-100 pb-4"><span class="text-slate-400 text-2xl">⏱️</span> Tiempos de Cocina (KDS)</h3>
-                        <form onsubmit="window.app.saveConfig(event)" class="space-y-8">
+                        <form onsubmit="window.app.saveKdsConfig(event)" class="space-y-8">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative overflow-hidden">
                                     <div class="absolute top-0 right-0 w-2 h-full bg-amber-400"></div>
@@ -169,7 +473,6 @@
                                     <input type="number" id="cfg-kds-yellow" required min="1" class="w-full bg-white border-2 border-slate-200 rounded-xl p-4 outline-none focus:border-amber-400 font-black text-2xl text-slate-700 text-center transition-colors">
                                     <p class="text-[11px] text-slate-400 mt-3 leading-tight font-medium">El ticket de cocina cambiará a color amarillo indicando que requiere <strong class="text-slate-500">atención</strong>.</p>
                                 </div>
-                                
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative overflow-hidden">
                                     <div class="absolute top-0 right-0 w-2 h-full bg-rose-500"></div>
                                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Minutos para Alerta <span class="text-rose-500">Roja</span></label>
@@ -177,224 +480,1241 @@
                                     <p class="text-[11px] text-slate-400 mt-3 leading-tight font-medium">El ticket parpadeará en rojo indicando un estado <strong class="text-slate-500">urgente / atrasado</strong>.</p>
                                 </div>
                             </div>
-                            
-                            <div class="pt-2 flex justify-end">
-                                <button type="submit" id="btn-save-cfg" class="bg-slate-800 hover:bg-slate-900 text-white font-black py-4 px-10 rounded-xl transition-colors shadow-lg shadow-slate-800/20 text-lg tracking-wide">
-                                    Guardar Configuración
-                                </button>
+                            <div class="pt-2 flex justify-end"><button type="submit" id="btn-save-cfg" class="bg-slate-800 hover:bg-slate-900 text-white font-black py-4 px-10 rounded-xl shadow-lg text-lg">Guardar Configuración</button></div>
+                        </form>
+                    </div>
+
+                    <!-- Tab Negocio -->
+                    <div id="cfg-negocio" class="hidden bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-3xl">
+                        <h3 class="font-bold text-xl mb-6 flex items-center gap-2 text-slate-800 border-b border-slate-100 pb-4"><span class="text-slate-400 text-2xl">⚙️</span> Reglas de Negocio</h3>
+                        <form onsubmit="window.app.saveBusinessConfig(event)" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">ISV (%)</label>
+                                    <input type="number" id="cfg-isv-rate" required min="0" max="100" step="0.01" class="w-full bg-white border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-black text-xl text-center">
+                                    <p class="text-[11px] text-slate-400 mt-2">Honduras: <strong>15%</strong> (general). Cambiar solo si aplica tasa diferenciada.</p>
+                                </div>
+                                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Umbral de Stock Bajo</label>
+                                    <input type="number" id="cfg-low-stock" required min="1" class="w-full bg-white border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-black text-xl text-center">
+                                    <p class="text-[11px] text-slate-400 mt-2">Productos con stock ≤ este valor mostrarán alerta en Dashboard.</p>
+                                </div>
                             </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" id="cfg-price-incl-isv" class="w-5 h-5 rounded text-amber-500 focus:ring-amber-500 border-slate-300">
+                                    <div>
+                                        <span class="font-bold text-slate-700">Los precios del menú ya incluyen ISV</span>
+                                        <p class="text-[11px] text-slate-400 mt-1">Si está activado, el ISV se calcula <em>despejando</em> del precio (ej: L.115 → subtotal L.100 + ISV L.15). Práctica estándar en restaurantes hondureños.</p>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="pt-2 flex justify-end"><button type="submit" id="btn-save-biz" class="bg-slate-800 hover:bg-slate-900 text-white font-black py-3 px-8 rounded-xl shadow-lg">Guardar Reglas</button></div>
                         </form>
                     </div>
                 </div>
 
                 <!-- 7. GUÍA LEGAL -->
                 <div id="view-guia" class="hidden">
-                    <div class="bg-white rounded-3xl shadow-xl p-10 max-w-4xl mx-auto border border-slate-100 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-20 -mt-20 z-0"></div>
-                        <div class="relative z-10"><h2 class="text-3xl font-black mb-2 text-slate-800 tracking-tight">Guía Legal y Fiscal</h2><p class="text-slate-500 font-medium mb-8">Cumplimiento municipal en San Pedro Sula.</p><div class="space-y-6"><div class="border-l-4 border-slate-800 pl-6 py-4 bg-slate-50 rounded-r-2xl"><h4 class="font-bold text-slate-800 text-lg">SAR (Facturación Fiscal)</h4><p class="text-sm text-slate-600 mt-2 leading-relaxed">Todo negocio debe emitir comprobantes fiscales válidos. Solicite la Clave de Autorización de Impresión (CAI).</p></div></div></div>
+                    <div class="mb-8"><h2 class="text-3xl font-black text-slate-800 tracking-tight">Guía Legal y Fiscal</h2><p class="text-slate-500 font-medium mt-1">Cumplimiento tributario y municipal en San Pedro Sula, Honduras.</p></div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+                            <div class="flex items-center gap-3 mb-4"><div class="bg-amber-100 p-3 rounded-xl text-2xl">🧾</div><h3 class="font-black text-lg text-slate-800">SAR — Régimen Tributario</h3></div>
+                            <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-slate-800">CAI (Clave de Autorización de Impresión):</strong> Debe solicitarlo al SAR antes de emitir facturas. Se renueva cuando se agota el rango autorizado o vence la fecha límite.</p>
+                                <p><strong class="text-slate-800">ISV (Impuesto sobre Ventas):</strong> 15% sobre la base imponible. Se declara mensualmente (Formulario ISV-353).</p>
+                                <p><strong class="text-slate-800">Pagos a Cuenta:</strong> Renta a cuenta cuatrimestral (junio, septiembre, diciembre).</p>
+                                <p><strong class="text-slate-800">Declaración Anual ISR:</strong> Antes del 30 de abril de cada año.</p>
+                                <p><strong class="text-slate-800">Régimen Simplificado:</strong> Si ventas anuales &lt; L. 250,000, puede optar al régimen simplificado del ISV.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+                            <div class="flex items-center gap-3 mb-4"><div class="bg-emerald-100 p-3 rounded-xl text-2xl">🏛️</div><h3 class="font-black text-lg text-slate-800">Municipalidad SPS</h3></div>
+                            <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-slate-800">Permiso de Operación:</strong> Se renueva en enero de cada año. Tasa según volumen de ventas.</p>
+                                <p><strong class="text-slate-800">Impuesto Industria y Comercio:</strong> Se paga trimestralmente con base en ingresos brutos.</p>
+                                <p><strong class="text-slate-800">Bienes Inmuebles:</strong> Si el local es propio, se paga anualmente.</p>
+                                <p><strong class="text-slate-800">Rótulos / Publicidad:</strong> Declarar metros cuadrados de letreros visibles.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+                            <div class="flex items-center gap-3 mb-4"><div class="bg-blue-100 p-3 rounded-xl text-2xl">🛡️</div><h3 class="font-black text-lg text-slate-800">IHSS y RAP</h3></div>
+                            <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-slate-800">IHSS Régimen Aporte:</strong> 7.30% patronal + 3.50% empleado (EM/IVM). Mensual.</p>
+                                <p><strong class="text-slate-800">RAP:</strong> 1.5% patronal + 1.5% empleado sobre el primer salario mínimo. Mensual.</p>
+                                <p><strong class="text-slate-800">INFOP:</strong> 1% patronal sobre planilla. Mensual.</p>
+                                <p><strong class="text-slate-800">Salario Mínimo restaurantes (1-10 empleados):</strong> Consulte tabla vigente del STSS.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+                            <div class="flex items-center gap-3 mb-4"><div class="bg-rose-100 p-3 rounded-xl text-2xl">🍽️</div><h3 class="font-black text-lg text-slate-800">Salud y Operación</h3></div>
+                            <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-slate-800">Licencia Sanitaria:</strong> Región Sanitaria SPS. Renovación anual.</p>
+                                <p><strong class="text-slate-800">Carné de Manipulación de Alimentos:</strong> Obligatorio para cada empleado de cocina. Renovación anual.</p>
+                                <p><strong class="text-slate-800">Permiso de Bomberos:</strong> Inspección anual de extintores y rutas de evacuación.</p>
+                                <p><strong class="text-slate-800">Ambiente:</strong> Para locales &gt; 100m², licencia ambiental municipal.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-3xl p-6 text-sm text-amber-900">
+                        <strong>⚠️ Importante:</strong> Esta guía es referencial. Confirme tasas, plazos y formularios vigentes con su contador o directamente en SAR/Municipalidad antes de presentar declaraciones.
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
 
-    <!-- MODALES DE OPERACIÓN (Checkout, Edit Product) -->
-    <!-- Checkout Modal -->
+    <!-- MODAL CHECKOUT -->
     <div id="modal-checkout" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-            <div class="bg-slate-800 p-6 text-white text-center relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-20"></div><h3 class="font-black text-2xl relative z-10 tracking-tight">Cobrar Factura</h3></div>
-            <div class="p-8 space-y-6 bg-slate-50/50">
-                <div class="flex justify-between items-center text-xl bg-white p-4 rounded-2xl border border-slate-100 shadow-sm"><span class="text-slate-500 font-bold text-sm uppercase tracking-wider">Total:</span><span class="font-black text-4xl text-slate-800 tracking-tighter" id="modal-total">L. 0.00</span></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Forma de Pago</label><select id="modal-metodo" class="w-full bg-white border-2 border-slate-200 p-4 rounded-2xl font-bold outline-none text-lg text-slate-700 focus:border-amber-500 cursor-pointer" onchange="window.app.toggleCashInput()"><option value="efectivo">💵 Pago en Efectivo</option><option value="tarjeta">💳 Tarjeta / Transferencia</option></select></div>
-                <div id="cash-input-section"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Efectivo Recibido (L.)</label><input type="number" id="modal-recibido" class="w-full bg-white border-2 border-emerald-400 rounded-2xl p-4 text-4xl font-black text-right outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 text-slate-800" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()"><div class="flex justify-between items-center mt-4 bg-slate-800 p-5 rounded-2xl shadow-inner text-white"><span class="font-bold text-slate-400 text-sm uppercase tracking-widest">Vuelto a entregar:</span><span class="font-black text-3xl tracking-tighter" id="modal-vuelto">L. 0.00</span></div></div>
-                <div class="flex gap-4 pt-2"><button onclick="window.app.closeCheckoutModal()" class="w-1/3 bg-white border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600 font-bold py-4 rounded-2xl text-lg transition-all">Cancelar</button><button onclick="window.app.processSale()" id="btn-confirmar-venta" class="w-2/3 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed text-lg tracking-wider shadow-lg shadow-emerald-500/30 transition-all" disabled>Confirmar</button></div>
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden transform transition-all max-h-[95vh] flex flex-col">
+            <div class="bg-slate-800 p-5 text-white text-center relative overflow-hidden flex-shrink-0">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-20"></div>
+                <h3 class="font-black text-2xl relative z-10 tracking-tight">Cobrar Factura</h3>
+                <p class="text-xs text-slate-300 mt-1 relative z-10">Próximo correlativo: <span class="font-mono font-bold text-amber-300" id="checkout-correlative">—</span></p>
+            </div>
+            <div class="p-6 space-y-4 bg-slate-50/50 overflow-y-auto">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-1.5 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="font-semibold" id="modal-subtotal">L. 0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">ISV (<span id="modal-isv-rate">15</span>%)</span><span class="font-semibold" id="modal-isv">L. 0.00</span></div>
+                    <div class="flex justify-between items-end border-t pt-2 mt-2"><span class="text-slate-700 font-bold uppercase tracking-wider text-xs">Total:</span><span class="font-black text-3xl text-slate-800 tracking-tighter" id="modal-total">L. 0.00</span></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-100">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Datos del Cliente (opcional)</div>
+                    <div class="grid grid-cols-1 gap-3">
+                        <input type="text" id="modal-client-name" placeholder="Nombre del cliente" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 text-sm font-medium">
+                        <input type="text" id="modal-client-rtn" placeholder="RTN del cliente (para factura fiscal)" maxlength="16" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 text-sm font-mono">
+                    </div>
+                </div>
+
+                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Forma de Pago</label>
+                    <select id="modal-metodo" class="w-full bg-white border-2 border-slate-200 p-3 rounded-2xl font-bold outline-none text-base text-slate-700 focus:border-amber-500 cursor-pointer" onchange="window.app.toggleCashInput()">
+                        <option value="efectivo">💵 Pago en Efectivo</option>
+                        <option value="tarjeta">💳 Tarjeta / Transferencia</option>
+                    </select>
+                </div>
+                <div id="cash-input-section">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Efectivo Recibido (L.)</label>
+                    <input type="number" id="modal-recibido" class="w-full bg-white border-2 border-emerald-400 rounded-2xl p-3 text-3xl font-black text-right outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 text-slate-800" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()">
+                    <div class="flex justify-between items-center mt-3 bg-slate-800 p-4 rounded-2xl shadow-inner text-white"><span class="font-bold text-slate-400 text-sm uppercase tracking-widest">Vuelto:</span><span class="font-black text-2xl tracking-tighter" id="modal-vuelto">L. 0.00</span></div>
+                </div>
+            </div>
+            <div class="flex gap-3 p-5 bg-white border-t border-slate-100 flex-shrink-0">
+                <button onclick="window.app.closeCheckoutModal()" class="w-1/3 bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 rounded-2xl transition-all">Cancelar</button>
+                <button onclick="window.app.processSale()" id="btn-confirmar-venta" class="w-2/3 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed text-base tracking-wider shadow-lg shadow-emerald-500/30 transition-all" disabled>Confirmar y Facturar</button>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- MODAL EDITAR PRODUCTO -->
     <div id="modal-edit-product" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden"><div class="bg-slate-800 p-6 text-white text-center"><h3 class="font-black text-xl tracking-tight">Ajustar Inventario</h3></div><div class="p-8"><form onsubmit="window.app.saveEditedProduct(event)" class="space-y-5"><input type="hidden" id="edit-id"><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Nombre</label><input type="text" id="edit-name" required class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none text-lg font-bold text-slate-700"></div><div class="flex gap-4"><div class="flex-1"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Precio (L)</label><input type="number" id="edit-price" required min="1" step="0.5" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none text-lg font-bold text-emerald-600"></div><div class="flex-1"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Costo (L)</label><input type="number" id="edit-cost" required min="0" step="0.5" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none text-lg font-bold text-rose-500"></div></div><div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Stock Actual (Porciones)</label><input type="number" id="edit-stock" required min="0" class="w-full border-4 border-slate-800 bg-white rounded-xl p-4 outline-none text-3xl font-black text-center text-slate-800"></div><div class="flex gap-4 pt-4 border-t border-slate-100 mt-6"><button type="button" onclick="window.app.closeEditModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-colors">Cerrar</button><button type="submit" id="btn-update-product" class="w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black tracking-widest py-4 rounded-xl shadow-lg shadow-amber-500/30">ACTUALIZAR</button></div></form></div></div>
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden max-h-[95vh] flex flex-col">
+            <div class="bg-slate-800 p-5 text-white text-center flex-shrink-0"><h3 class="font-black text-xl tracking-tight">Ajustar Producto</h3></div>
+            <div class="p-6 overflow-y-auto">
+                <form onsubmit="window.app.saveEditedProduct(event)" class="space-y-4">
+                    <input type="hidden" id="edit-id">
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nombre</label><input type="text" id="edit-name" required class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none text-base font-bold text-slate-700"></div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Categoría</label><select id="edit-category" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none font-medium"></select></div>
+                    <div class="flex gap-3">
+                        <div class="flex-1"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Precio (L)</label><input type="number" id="edit-price" required min="0.01" step="0.01" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none font-bold text-emerald-600"></div>
+                        <div class="flex-1"><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Costo (L)</label><input type="number" id="edit-cost" required min="0" step="0.01" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none font-bold text-rose-500"></div>
+                    </div>
+                    <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Stock Actual</label><input type="number" id="edit-stock" required min="0" class="w-full border-4 border-slate-800 bg-white rounded-xl p-3 outline-none text-2xl font-black text-center"></div>
+                    <div><div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Icono</div><div id="edit-icon-grid" class="bg-slate-50 border-2 border-slate-200 rounded-xl p-2 flex flex-wrap gap-1 max-h-32 overflow-y-auto"></div><input type="hidden" id="edit-icon" value="🍲"></div>
+                    <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
+                        <button type="button" onclick="window.app.closeEditModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl">Cerrar</button>
+                        <button type="submit" id="btn-update-product" class="w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black tracking-widest py-3 rounded-xl shadow-lg">ACTUALIZAR</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <!-- LOGIC -->
+    <!-- MODAL NOTA DE PRODUCTO -->
+    <div id="modal-note" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-[80] p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+            <h3 class="font-black text-lg mb-1 text-slate-800">Nota para cocina</h3>
+            <p class="text-slate-500 text-sm mb-4" id="note-product-label">—</p>
+            <textarea id="note-text" rows="3" placeholder="Ej: Sin cebolla, término medio, sin picante..." class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 text-slate-700 resize-none"></textarea>
+            <div class="flex gap-3 mt-5">
+                <button onclick="window.app.closeNoteModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl">Cancelar</button>
+                <button onclick="window.app.saveCartNote()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black py-3 rounded-xl">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TICKET / PREVIEW -->
+    <div id="modal-ticket" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[95vh]">
+            <div class="bg-slate-800 p-5 text-white flex justify-between items-center flex-shrink-0">
+                <h3 class="font-black text-lg">Factura</h3>
+                <button onclick="window.app.closeTicketModal()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div id="print-area" class="overflow-y-auto p-6 bg-slate-100">
+                <div class="receipt bg-white p-5 rounded-lg shadow text-[12px] leading-relaxed" id="ticket-content"></div>
+            </div>
+            <div class="flex gap-3 p-4 bg-white border-t border-slate-100 flex-shrink-0">
+                <button onclick="window.app.closeTicketModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl">Cerrar</button>
+                <button onclick="window.print()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-black py-3 rounded-xl">🖨️ Imprimir</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let db = null;
-        let kdsTimer = null;
 
         window.app = {
+            CATEGORIES: [
+                { id: 'entradas',  label: 'Entradas',       icon: '🥗' },
+                { id: 'sopas',     label: 'Sopas',          icon: '🥣' },
+                { id: 'desayunos', label: 'Desayunos',      icon: '🍳' },
+                { id: 'platos',    label: 'Platos Fuertes', icon: '🍛' },
+                { id: 'combos',    label: 'Combos',         icon: '🍱' },
+                { id: 'bebidas',   label: 'Bebidas',        icon: '🥤' },
+                { id: 'postres',   label: 'Postres',        icon: '🍰' },
+                { id: 'otros',     label: 'Otros',          icon: '🍲' }
+            ],
+            ICONS: ['🍲','🍛','🍜','🍝','🍕','🍔','🌮','🌯','🥗','🥙','🍳','🥞','🧇','🥐','🥖','🍞','🥪','🌭','🍗','🍖','🥩','🥓','🍤','🍣','🍱','🥘','🥣','🍵','🍶','☕','🍷','🍸','🍹','🍺','🍻','🥂','🥃','🍾','🥤','🧋','🥛','🧃','🍮','🍰','🎂','🧁','🍪','🍫','🍩','🍦','🥧','🥯','🧀','🥚','🍅','🌶️','🥑','🌽','🥒','🥕','🥔','🍠','🍌','🍎','🍓','🍇','🍉','🍊','🍋','🍍','🥭','🥥','🍒','🥝'],
+
             state: {
-                activeView: 'pos', orderCounter: 1, inventory: [], cart: [], 
-                cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null,
-                reportFilter: 'hoy', isAdmin: false,
-                config: { kdsYellowLimit: 5, kdsRedLimit: 15 } // Configuración por defecto
+                activeView: 'pos',
+                inventory: [], cart: [], cartTotal: 0, cartSubtotal: 0, cartISV: 0,
+                activeOrders: [], salesHistory: [],
+                charts: {}, reportFilter: 'hoy', historyFilter: 'hoy', cierreFilter: 'hoy',
+                isAdmin: false,
+                config:  { kdsYellowLimit: 5, kdsRedLimit: 15, lowStockThreshold: 10, isvRate: 0.15, priceIncludesIsv: true },
+                fiscal:  { razonSocial: '', rtn: '', direccion: '', telefono: '', correo: '', cai: '', fechaLimite: '', tipoDoc: 'factura', prefix: '', rangoFrom: 0, rangoTo: 0 },
+                counter: 0,
+                posSearch: '', posCategory: 'todos',
+                invSearch: '', invCategory: 'todos',
+                orderType: 'mesa', tableNumber: '',
+                editingNoteCartId: null,
+                lastTicketOrder: null
             },
 
-            updateHeaderDate() { const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }; const today = new Date().toLocaleDateString('es-HN', options); const el = document.getElementById('dash-date'); if(el) el.innerText = today.charAt(0).toUpperCase() + today.slice(1); },
+            // ===== UTILIDADES =====
+            fmt(v) { v = Number(v) || 0; return `L. ${v.toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; },
+            padNumber(n) { return String(n || 0).padStart(8, '0'); },
+            buildCorrelative(n) { const p = this.state.fiscal.prefix; if (!p) return `#${n}`; return `${p}-${this.padNumber(n)}`; },
 
-            login(e) { e.preventDefault(); const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value; const btn = document.getElementById('btn-login'); btn.disabled = true; btn.innerText = "Verificando..."; firebase.auth().signInWithEmailAndPassword(email, pass).catch(error => { alert("Error de acceso."); btn.disabled = false; btn.innerText = "Acceder al ERP"; }); },
+            // ===== TOASTS =====
+            toast(msg, type = 'info', timeout = 3500) {
+                const c = document.getElementById('toast-container'); if (!c) return;
+                const colors = { info: 'bg-slate-800 text-white', success: 'bg-emerald-500 text-white', warn: 'bg-amber-500 text-slate-900', error: 'bg-rose-500 text-white' };
+                const icons = { info: 'ℹ️', success: '✅', warn: '⚠️', error: '⛔' };
+                const el = document.createElement('div');
+                el.className = `toast ${colors[type] || colors.info} px-5 py-4 rounded-2xl shadow-2xl font-bold flex items-start gap-3 backdrop-blur-md`;
+                el.innerHTML = `<span class="text-xl leading-none">${icons[type] || icons.info}</span><div class="flex-1 text-sm leading-snug">${msg}</div>`;
+                c.appendChild(el);
+                setTimeout(() => { el.style.transition = 'all .3s ease'; el.style.opacity = '0'; el.style.transform = 'translateX(120%)'; setTimeout(() => el.remove(), 300); }, timeout);
+            },
+
+            // ===== CONFIRM MODAL =====
+            _confirmResolve: null,
+            confirm({ title = 'Confirmar', msg = '', okText = 'Sí', icon = '⚠️', okColor = 'rose', withInput = false } = {}) {
+                return new Promise(resolve => {
+                    document.getElementById('confirm-title').innerText = title;
+                    document.getElementById('confirm-icon').innerText = icon;
+                    document.getElementById('confirm-msg').innerHTML = msg;
+                    const okBtn = document.getElementById('confirm-ok');
+                    okBtn.innerText = okText;
+                    okBtn.className = `flex-1 bg-${okColor}-500 hover:bg-${okColor}-600 text-white font-black py-3 rounded-xl transition-colors`;
+                    const inputWrap = document.getElementById('confirm-input-wrap');
+                    const input = document.getElementById('confirm-input');
+                    if (withInput) { inputWrap.classList.remove('hidden'); input.value = ''; setTimeout(() => input.focus(), 50); } else { inputWrap.classList.add('hidden'); }
+                    document.getElementById('modal-confirm').classList.remove('hidden');
+                    this._confirmResolve = (ok) => {
+                        document.getElementById('modal-confirm').classList.add('hidden');
+                        const v = ok ? (withInput ? (input.value.trim() || true) : true) : false;
+                        resolve(v);
+                    };
+                });
+            },
+
+            updateHeaderDate() { const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }; const t = new Date().toLocaleDateString('es-HN', opts); const el = document.getElementById('dash-date'); if (el) el.innerText = t.charAt(0).toUpperCase() + t.slice(1); },
+
+            // ===== AUTH =====
+            login(e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const btn = document.getElementById('btn-login');
+                btn.disabled = true; btn.innerText = 'Verificando...';
+                firebase.auth().signInWithEmailAndPassword(email, pass).catch(err => {
+                    this.toast('Credenciales incorrectas', 'error');
+                    btn.disabled = false; btn.innerText = 'Acceder al ERP';
+                });
+            },
             logout() { firebase.auth().signOut().then(() => window.location.reload()); },
             applyRoles(user) {
-                this.state.isAdmin = user.email.toLowerCase().includes('admin'); document.getElementById('sidebar-role').innerText = this.state.isAdmin ? 'Administrador' : 'Caja/Ventas';
-                const adminModules = ['nav-dashboard', 'nav-historial', 'nav-inventario', 'nav-reportes', 'nav-configuracion', 'nav-group-admin'];
+                this.state.isAdmin = user.email.toLowerCase().includes('admin');
+                document.getElementById('sidebar-role').innerText = this.state.isAdmin ? 'Administrador' : 'Caja/Ventas';
+                const adminModules = ['nav-dashboard', 'nav-historial', 'nav-cierre', 'nav-inventario', 'nav-reportes', 'nav-configuracion', 'nav-group-admin'];
                 adminModules.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = this.state.isAdmin ? 'flex' : 'none'; });
                 this.switchView(this.state.isAdmin ? 'dashboard' : 'pos');
             },
 
+            // ===== ROUTING =====
             switchView(viewId) {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                const navBtn = document.getElementById(`nav-${viewId}`); if(navBtn) navBtn.classList.add('active');
-                ['dashboard', 'pos', 'kds', 'historial', 'inventario', 'reportes', 'configuracion', 'guia'].forEach(id => { const el = document.getElementById(`view-${id}`); if(el) el.classList.add('hidden'); });
-                document.getElementById(`view-${viewId}`).classList.remove('hidden'); this.state.activeView = viewId;
-                if(viewId === 'dashboard' && this.state.isAdmin) this.updateDashboard();
-                if(viewId === 'reportes' && this.state.isAdmin) this.renderChart();
-                if(viewId === 'kds') this.renderKDS();
-                if(viewId === 'historial' && this.state.isAdmin) this.renderHistory();
+                const navBtn = document.getElementById(`nav-${viewId}`); if (navBtn) navBtn.classList.add('active');
+                ['dashboard', 'pos', 'kds', 'historial', 'cierre', 'inventario', 'reportes', 'configuracion', 'guia'].forEach(id => {
+                    const el = document.getElementById(`view-${id}`); if (el) el.classList.add('hidden');
+                });
+                const v = document.getElementById(`view-${viewId}`); if (v) v.classList.remove('hidden');
+                this.state.activeView = viewId;
+                const mobileNav = document.getElementById('mobile-nav'); if (mobileNav) mobileNav.value = viewId;
+                if (viewId === 'dashboard' && this.state.isAdmin) this.updateDashboard();
+                if (viewId === 'pos') this.renderPOSMenu();
+                if (viewId === 'reportes' && this.state.isAdmin) this.renderReports();
+                if (viewId === 'kds') this.renderKDS();
+                if (viewId === 'historial' && this.state.isAdmin) this.renderHistory();
+                if (viewId === 'cierre' && this.state.isAdmin) this.renderCierre();
+                if (viewId === 'configuracion' && this.state.isAdmin) this.fillConfigForms();
+                if (viewId === 'inventario' && this.state.isAdmin) { this.populateCategorySelects(); this.renderInventory(); this.renderIconGrid('new-icon-grid', 'new-icon'); }
             },
 
-            // --- POS ---
-            renderPOSMenu() { const grid = document.getElementById('product-grid'); grid.innerHTML = ''; if(this.state.inventory.length === 0) return grid.innerHTML = '<div class="col-span-full text-center text-slate-400 font-bold mt-10">Sin productos.</div>'; this.state.inventory.forEach(item => { const disabled = item.stock <= 0 ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 shadow-sm xui-card hover:bg-amber-50'; grid.innerHTML += `<div onclick="window.app.addToCart('${item.id}')" class="bg-white border-2 border-slate-100 p-5 rounded-2xl text-center transition-all ${disabled}"><div class="text-6xl mb-3 drop-shadow-sm">${item.icon || '🍲'}</div><div class="font-black text-slate-800 leading-tight tracking-tight">${item.name}</div><div class="text-emerald-500 font-black mt-2 text-xl tracking-tighter">L. ${item.price}</div><div class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md inline-block mt-3 font-bold uppercase tracking-widest">Stock: ${item.stock}</div></div>`; }); },
-            addToCart(productId) { const product = this.state.inventory.find(p => p.id === productId); if (!product || product.stock <= 0) return; const existing = this.state.cart.find(c => c.id === productId); if (existing) { if(existing.qty < product.stock) existing.qty++; } else { this.state.cart.push({ ...product, qty: 1 }); } this.updateCartUI(); },
-            decreaseCartQty(productId) { const item = this.state.cart.find(c => c.id === productId); if (item) { if (item.qty > 1) { item.qty--; this.updateCartUI(); } else { this.removeFromCart(productId); } } },
+            // ===== POS =====
+            getCategoryLabel(id) { const c = this.CATEGORIES.find(x => x.id === id); return c ? c.label : '—'; },
+            getCategoryIcon(id) { const c = this.CATEGORIES.find(x => x.id === id); return c ? c.icon : '🍲'; },
+
+            renderPOSCategories() {
+                const wrap = document.getElementById('pos-categories'); if (!wrap) return;
+                const cats = ['todos', ...new Set(this.state.inventory.map(p => p.category || 'otros'))];
+                wrap.innerHTML = cats.map(cid => {
+                    const label = cid === 'todos' ? 'Todos' : this.getCategoryLabel(cid);
+                    const icon  = cid === 'todos' ? '🍽️' : this.getCategoryIcon(cid);
+                    const active = this.state.posCategory === cid ? 'active' : '';
+                    return `<button onclick="window.app.setPOSCategory('${cid}')" class="cat-pill ${active} whitespace-nowrap border-2 border-slate-200 px-4 py-2 rounded-xl text-sm font-bold text-slate-700 hover:border-slate-300"><span class="mr-1">${icon}</span> ${label}</button>`;
+                }).join('');
+            },
+            setPOSSearch(v) { this.state.posSearch = v.toLowerCase(); this.renderPOSMenu(); },
+            setPOSCategory(c) { this.state.posCategory = c; this.renderPOSMenu(); },
+
+            renderPOSMenu() {
+                this.renderPOSCategories();
+                const grid = document.getElementById('product-grid'); if (!grid) return;
+                grid.innerHTML = '';
+                let items = this.state.inventory;
+                if (this.state.posCategory !== 'todos') items = items.filter(p => (p.category || 'otros') === this.state.posCategory);
+                if (this.state.posSearch) items = items.filter(p => p.name.toLowerCase().includes(this.state.posSearch));
+                if (items.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 font-bold mt-10 py-12">Sin resultados.</div>'; return; }
+                items.forEach(item => {
+                    const disabled = item.stock <= 0 ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-amber-400 shadow-sm xui-card hover:bg-amber-50';
+                    const lowStock = item.stock > 0 && item.stock <= (this.state.config.lowStockThreshold || 10);
+                    const stockBadge = lowStock ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500';
+                    grid.innerHTML += `<div onclick="window.app.addToCart('${item.id}')" class="bg-white border-2 border-slate-100 p-4 rounded-2xl text-center transition-all ${disabled}">
+                        <div class="text-5xl mb-2 drop-shadow-sm">${item.icon || '🍲'}</div>
+                        <div class="font-black text-slate-800 leading-tight tracking-tight text-sm">${item.name}</div>
+                        <div class="text-emerald-500 font-black mt-2 text-lg tracking-tighter">L. ${Number(item.price).toFixed(2)}</div>
+                        <div class="text-[10px] ${stockBadge} px-2 py-1 rounded-md inline-block mt-2 font-bold uppercase tracking-widest">Stock: ${item.stock}</div>
+                    </div>`;
+                });
+            },
+
+            setOrderType(t) {
+                this.state.orderType = t;
+                document.querySelectorAll('.ord-type').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+                const wrap = document.getElementById('table-input-wrap');
+                if (wrap) wrap.style.display = t === 'mesa' ? 'block' : 'none';
+            },
+
+            addToCart(productId) {
+                const product = this.state.inventory.find(p => p.id === productId);
+                if (!product || product.stock <= 0) return;
+                const existing = this.state.cart.find(c => c.id === productId);
+                if (existing) { if (existing.qty < product.stock) existing.qty++; else this.toast('Stock insuficiente', 'warn'); }
+                else { this.state.cart.push({ ...product, qty: 1, note: '' }); }
+                this.updateCartUI();
+            },
+            decreaseCartQty(productId) { const item = this.state.cart.find(c => c.id === productId); if (!item) return; if (item.qty > 1) { item.qty--; this.updateCartUI(); } else this.removeFromCart(productId); },
             removeFromCart(productId) { this.state.cart = this.state.cart.filter(c => c.id !== productId); this.updateCartUI(); },
-            updateCartUI() { const container = document.getElementById('cart-items'); const btnCobrar = document.getElementById('btn-cobrar'); container.innerHTML = ''; this.state.cartTotal = 0; if (this.state.cart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 mt-10 font-medium">No hay platillos en la orden</div>'; btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return; } btnCobrar.disabled = false; this.state.cart.forEach(item => { const total = item.price * item.qty; this.state.cartTotal += total; container.innerHTML += `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col mb-3"><div class="font-bold text-slate-800 text-lg leading-tight mb-3">${item.name} <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded ml-2">L.${item.price} ud</span></div><div class="flex justify-between items-center"><div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-200"><button onclick="window.app.decreaseCartQty('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">-</button><span class="w-10 text-center font-black text-xl text-slate-800">${item.qty}</span><button onclick="window.app.addToCart('${item.id}')" class="w-10 h-10 text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm rounded-lg font-black text-xl transition">+</button></div><div class="flex items-center gap-4"><div class="font-black text-2xl text-emerald-500 tracking-tighter">L.${total}</div><button onclick="window.app.removeFromCart('${item.id}')" class="text-rose-300 hover:text-rose-500 text-2xl transition pl-2">✖</button></div></div></div>`; }); document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`; },
+            openNoteModal(productId) {
+                const item = this.state.cart.find(c => c.id === productId); if (!item) return;
+                this.state.editingNoteCartId = productId;
+                document.getElementById('note-product-label').innerText = item.name;
+                document.getElementById('note-text').value = item.note || '';
+                document.getElementById('modal-note').classList.remove('hidden');
+                setTimeout(() => document.getElementById('note-text').focus(), 50);
+            },
+            closeNoteModal() { document.getElementById('modal-note').classList.add('hidden'); this.state.editingNoteCartId = null; },
+            saveCartNote() {
+                const item = this.state.cart.find(c => c.id === this.state.editingNoteCartId); if (!item) return;
+                item.note = document.getElementById('note-text').value.trim();
+                this.closeNoteModal(); this.updateCartUI();
+            },
 
-        
-            // --- CHECKOUT ---
-            openCheckoutModal() { document.getElementById('modal-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`; document.getElementById('modal-recibido').value = ''; this.toggleCashInput(); document.getElementById('modal-checkout').classList.remove('hidden'); setTimeout(() => document.getElementById('modal-recibido').focus(), 100); },
+            updateCartUI() {
+                const container = document.getElementById('cart-items');
+                const btnCobrar = document.getElementById('btn-cobrar');
+                container.innerHTML = '';
+                const rate = this.state.config.isvRate || 0.15;
+                const includes = this.state.config.priceIncludesIsv !== false;
+                document.getElementById('cart-isv-rate').innerText = (rate * 100).toFixed(0);
+                let gross = 0;
+                this.state.cart.forEach(item => gross += item.price * item.qty);
+                let subtotal, isv, total;
+                if (includes) { total = gross; subtotal = gross / (1 + rate); isv = gross - subtotal; }
+                else { subtotal = gross; isv = gross * rate; total = subtotal + isv; }
+                this.state.cartSubtotal = subtotal; this.state.cartISV = isv; this.state.cartTotal = total;
+
+                if (this.state.cart.length === 0) {
+                    container.innerHTML = '<div class="text-center text-slate-400 mt-10 font-medium">No hay platillos en la orden</div>';
+                    btnCobrar.disabled = true;
+                    document.getElementById('cart-subtotal').innerText = 'L. 0.00';
+                    document.getElementById('cart-isv').innerText = 'L. 0.00';
+                    document.getElementById('cart-total').innerText = 'L. 0.00';
+                    return;
+                }
+                btnCobrar.disabled = false;
+                this.state.cart.forEach(item => {
+                    const lineTotal = item.price * item.qty;
+                    const noteHTML = item.note ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2 text-[11px] text-amber-800 font-medium"><strong>📝</strong> ${item.note}</div>` : '';
+                    container.innerHTML += `<div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="font-bold text-slate-800 text-sm leading-tight mb-2 flex justify-between gap-2">
+                            <span>${item.name}<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded ml-2">L.${item.price}</span></span>
+                            <button onclick="window.app.openNoteModal('${item.id}')" title="Nota" class="text-slate-300 hover:text-amber-500 text-base flex-shrink-0">📝</button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-200">
+                                <button onclick="window.app.decreaseCartQty('${item.id}')" class="w-8 h-8 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg font-black text-lg">-</button>
+                                <span class="w-8 text-center font-black text-base text-slate-800">${item.qty}</span>
+                                <button onclick="window.app.addToCart('${item.id}')" class="w-8 h-8 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg font-black text-lg">+</button>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="font-black text-lg text-emerald-500 tracking-tighter">L.${lineTotal.toFixed(2)}</div>
+                                <button onclick="window.app.removeFromCart('${item.id}')" class="text-rose-300 hover:text-rose-500 text-xl">✖</button>
+                            </div>
+                        </div>
+                        ${noteHTML}
+                    </div>`;
+                });
+                document.getElementById('cart-subtotal').innerText = this.fmt(subtotal);
+                document.getElementById('cart-isv').innerText = this.fmt(isv);
+                document.getElementById('cart-total').innerText = this.fmt(total);
+            },
+
+            // ===== CHECKOUT =====
+            openCheckoutModal() {
+                document.getElementById('modal-subtotal').innerText = this.fmt(this.state.cartSubtotal);
+                document.getElementById('modal-isv').innerText = this.fmt(this.state.cartISV);
+                document.getElementById('modal-isv-rate').innerText = ((this.state.config.isvRate || 0.15) * 100).toFixed(0);
+                document.getElementById('modal-total').innerText = this.fmt(this.state.cartTotal);
+                document.getElementById('modal-recibido').value = '';
+                document.getElementById('modal-client-name').value = '';
+                document.getElementById('modal-client-rtn').value = '';
+                const nextCorr = this.buildCorrelative((this.state.counter || 0) + 1);
+                document.getElementById('checkout-correlative').innerText = nextCorr;
+                this.toggleCashInput();
+                document.getElementById('modal-checkout').classList.remove('hidden');
+                setTimeout(() => document.getElementById('modal-recibido').focus(), 100);
+            },
             closeCheckoutModal() { document.getElementById('modal-checkout').classList.add('hidden'); },
-            toggleCashInput() { const method = document.getElementById('modal-metodo').value; const cashSection = document.getElementById('cash-input-section'); if(method === 'efectivo') { cashSection.classList.remove('hidden'); this.calculateChange(); } else { cashSection.classList.add('hidden'); document.getElementById('btn-confirmar-venta').disabled = false; } },
-            calculateChange() { const rec = parseFloat(document.getElementById('modal-recibido').value) || 0; const change = rec - this.state.cartTotal; const display = document.getElementById('modal-vuelto'); const btn = document.getElementById('btn-confirmar-venta'); if (!document.getElementById('modal-recibido').value) { display.innerText = 'L. 0.00'; display.className = 'font-black text-3xl text-slate-400'; btn.disabled = true; } else if (change >= 0) { display.innerText = `L. ${change.toFixed(2)}`; display.className = 'font-black text-3xl text-emerald-400'; btn.disabled = false; } else { display.innerText = `L. ${Math.abs(change).toFixed(2)}`; display.className = 'font-black text-3xl text-rose-500'; btn.disabled = true; } },
-            async processSale() { if(!db) return; const btn = document.getElementById('btn-confirmar-venta'); btn.disabled = true; btn.innerText = "..."; try { const batch = db.batch(); this.state.cart.forEach(c => { const invRef = db.collection("inventory").doc(c.id); batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(-c.qty) }); }); const orderRef = db.collection("orders").doc(); batch.set(orderRef, { number: this.state.orderCounter, items: this.state.cart, total: this.state.cartTotal, status: 'preparando', method: document.getElementById('modal-metodo').value, timestamp: firebase.firestore.FieldValue.serverTimestamp(), user: firebase.auth().currentUser.email }); await batch.commit(); this.state.cart = []; this.updateCartUI(); this.closeCheckoutModal(); const btnCobrar = document.getElementById('btn-cobrar'); btnCobrar.innerText = "¡ENVIADO!"; btnCobrar.classList.replace('bg-emerald-500', 'bg-slate-800'); setTimeout(() => { btnCobrar.innerText = "COBRAR ORDEN"; btnCobrar.classList.replace('bg-slate-800', 'bg-emerald-500'); }, 1500); } catch (error) { console.error(error); } finally { btn.innerText = "Confirmar"; btn.disabled = false; } },
+            toggleCashInput() {
+                const method = document.getElementById('modal-metodo').value;
+                const cashSection = document.getElementById('cash-input-section');
+                if (method === 'efectivo') { cashSection.classList.remove('hidden'); this.calculateChange(); }
+                else { cashSection.classList.add('hidden'); document.getElementById('btn-confirmar-venta').disabled = false; }
+            },
+            calculateChange() {
+                const rec = parseFloat(document.getElementById('modal-recibido').value) || 0;
+                const change = rec - this.state.cartTotal;
+                const display = document.getElementById('modal-vuelto');
+                const btn = document.getElementById('btn-confirmar-venta');
+                if (!document.getElementById('modal-recibido').value) { display.innerText = 'L. 0.00'; display.className = 'font-black text-2xl text-slate-400'; btn.disabled = true; }
+                else if (change >= 0) { display.innerText = this.fmt(change); display.className = 'font-black text-2xl text-emerald-400'; btn.disabled = false; }
+                else { display.innerText = this.fmt(Math.abs(change)); display.className = 'font-black text-2xl text-rose-500'; btn.disabled = true; }
+            },
 
-            // --- CONFIGURACIÓN ---
-            async saveConfig(e) {
-                e.preventDefault(); if(!db) return;
-                const btn = document.getElementById('btn-save-cfg'); btn.disabled = true; btn.innerText = "Guardando...";
+            async processSale() {
+                if (!db) return;
+                const btn = document.getElementById('btn-confirmar-venta');
+                btn.disabled = true; btn.innerText = '...';
+                try {
+                    const method = document.getElementById('modal-metodo').value;
+                    const received = method === 'efectivo' ? (parseFloat(document.getElementById('modal-recibido').value) || 0) : null;
+                    const change = received !== null ? Math.max(0, received - this.state.cartTotal) : null;
+                    const customer = { name: document.getElementById('modal-client-name').value.trim(), rtn: document.getElementById('modal-client-rtn').value.trim() };
+
+                    const newNumber = await db.runTransaction(async (tx) => {
+                        const ref = db.collection('counters').doc('orders');
+                        const snap = await tx.get(ref);
+                        const current = snap.exists ? (snap.data().count || 0) : 0;
+                        const fallback = Math.max(current, this.state.counter || 0);
+                        const next = fallback + 1;
+                        tx.set(ref, { count: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                        return next;
+                    });
+
+                    const correlative = this.buildCorrelative(newNumber);
+                    const batch = db.batch();
+                    this.state.cart.forEach(c => {
+                        const invRef = db.collection('inventory').doc(c.id);
+                        batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(-c.qty) });
+                    });
+                    const orderRef = db.collection('orders').doc();
+                    const orderData = {
+                        number: newNumber,
+                        correlative,
+                        items: this.state.cart.map(c => ({ id: c.id, name: c.name, price: c.price, cost: c.cost || 0, qty: c.qty, icon: c.icon || '🍲', category: c.category || 'otros', note: c.note || '' })),
+                        subtotal: Number(this.state.cartSubtotal.toFixed(2)),
+                        isv: Number(this.state.cartISV.toFixed(2)),
+                        isvRate: this.state.config.isvRate || 0.15,
+                        total: Number(this.state.cartTotal.toFixed(2)),
+                        method,
+                        received, change,
+                        type: this.state.orderType,
+                        tableNumber: this.state.orderType === 'mesa' ? (document.getElementById('pos-table').value.trim() || '') : '',
+                        customer,
+                        status: 'preparando',
+                        cai: this.state.fiscal.cai || '',
+                        cairangoFrom: this.state.fiscal.prefix ? `${this.state.fiscal.prefix}-${this.padNumber(this.state.fiscal.rangoFrom)}` : '',
+                        cairangoTo: this.state.fiscal.prefix ? `${this.state.fiscal.prefix}-${this.padNumber(this.state.fiscal.rangoTo)}` : '',
+                        caiFechaLimite: this.state.fiscal.fechaLimite || '',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        user: firebase.auth().currentUser.email
+                    };
+                    batch.set(orderRef, orderData);
+                    await batch.commit();
+
+                    const ticketOrder = { ...orderData, id: orderRef.id, dateObj: new Date() };
+                    this.state.lastTicketOrder = ticketOrder;
+                    this.state.cart = []; this.state.tableNumber = '';
+                    document.getElementById('pos-table').value = '';
+                    this.updateCartUI();
+                    this.closeCheckoutModal();
+                    this.toast(`Factura ${correlative} emitida`, 'success');
+                    this.showTicket(ticketOrder);
+                } catch (err) {
+                    console.error(err);
+                    this.toast('Error al procesar venta', 'error');
+                } finally {
+                    btn.innerText = 'Confirmar y Facturar'; btn.disabled = false;
+                }
+            },
+
+            // ===== TICKET =====
+            showTicket(order) {
+                document.getElementById('ticket-content').innerHTML = this.buildTicketHTML(order);
+                document.getElementById('modal-ticket').classList.remove('hidden');
+            },
+            closeTicketModal() { document.getElementById('modal-ticket').classList.add('hidden'); },
+            previewTicket() {
+                const fake = {
+                    correlative: this.buildCorrelative((this.state.counter || 0) + 1),
+                    items: [{ name: 'Baleada Sencilla', qty: 2, price: 30, note: '' }, { name: 'Refresco', qty: 1, price: 25, note: '' }],
+                    subtotal: 73.91, isv: 11.09, total: 85, method: 'efectivo', received: 100, change: 15,
+                    type: 'mesa', tableNumber: '4', customer: { name: 'Cliente Final', rtn: '' },
+                    dateObj: new Date(), user: firebase.auth().currentUser?.email || 'demo',
+                    cai: this.state.fiscal.cai, cairangoFrom: this.state.fiscal.prefix ? `${this.state.fiscal.prefix}-${this.padNumber(this.state.fiscal.rangoFrom)}` : '',
+                    cairangoTo: this.state.fiscal.prefix ? `${this.state.fiscal.prefix}-${this.padNumber(this.state.fiscal.rangoTo)}` : '',
+                    caiFechaLimite: this.state.fiscal.fechaLimite, isvRate: this.state.config.isvRate || 0.15
+                };
+                this.showTicket(fake);
+            },
+            buildTicketHTML(o) {
+                const f = this.state.fiscal;
+                const line = '<hr style="border:0;border-top:1px dashed #000;margin:6px 0">';
+                const fmt = (v) => `L. ${Number(v||0).toFixed(2)}`;
+                const dt = (o.dateObj || new Date()).toLocaleString('es-HN');
+                const typeLabel = { mesa: 'Mesa', llevar: 'Para llevar', delivery: 'Delivery' }[o.type] || o.type || '';
+                const tableStr = o.type === 'mesa' && o.tableNumber ? ` ${o.tableNumber}` : '';
+                const itemsHTML = (o.items || []).map(it => {
+                    const lt = (it.price * it.qty).toFixed(2);
+                    const noteHTML = it.note ? `<div style="font-size:10px;font-style:italic;padding-left:8px">→ ${it.note}</div>` : '';
+                    return `<div style="display:flex;justify-content:space-between"><span>${it.qty} × ${it.name}</span><span>${lt}</span></div>${noteHTML}`;
+                }).join('');
+                const cliBlock = (o.customer && (o.customer.name || o.customer.rtn))
+                    ? `${line}<div><strong>Cliente:</strong> ${o.customer.name || '—'}</div>${o.customer.rtn ? `<div><strong>RTN:</strong> ${o.customer.rtn}</div>` : ''}` : '';
+                const caiBlock = o.cai ? `${line}<div style="font-size:10px"><strong>CAI:</strong><br>${o.cai}</div>
+                    <div style="font-size:10px">Rango Aut.: ${o.cairangoFrom || '—'} a ${o.cairangoTo || '—'}</div>
+                    <div style="font-size:10px">Fecha límite emisión: ${o.caiFechaLimite || '—'}</div>` : `${line}<div style="font-size:10px;color:#888"><em>⚠️ CAI pendiente — Documento NO fiscal</em></div>`;
+                const methodLabel = { efectivo: 'Efectivo', tarjeta: 'Tarjeta/Transf.' }[o.method] || o.method || '';
+                const cashBlock = o.method === 'efectivo' && o.received != null
+                    ? `<div style="display:flex;justify-content:space-between"><span>Recibido:</span><span>${fmt(o.received)}</span></div>
+                       <div style="display:flex;justify-content:space-between"><span>Vuelto:</span><span>${fmt(o.change || 0)}</span></div>` : '';
+                return `
+                    <div style="text-align:center">
+                        <h1 style="font-size:14px;font-weight:900;margin:0">${f.razonSocial || 'Sazón SPS'}</h1>
+                        ${f.rtn ? `<div>RTN: ${f.rtn}</div>` : ''}
+                        ${f.direccion ? `<div style="font-size:10px">${f.direccion}</div>` : ''}
+                        ${f.telefono ? `<div style="font-size:10px">Tel: ${f.telefono}</div>` : ''}
+                    </div>
+                    ${line}
+                    <div style="text-align:center;font-weight:bold;text-transform:uppercase">${(f.tipoDoc || 'factura')}</div>
+                    <div style="text-align:center;font-size:14px;font-weight:900;font-family:monospace">${o.correlative || '#—'}</div>
+                    <div style="text-align:center;font-size:10px">${dt}</div>
+                    <div style="text-align:center;font-size:10px">${typeLabel}${tableStr} · Cajero: ${(o.user||'').split('@')[0]}</div>
+                    ${cliBlock}
+                    ${line}
+                    ${itemsHTML}
+                    ${line}
+                    <div style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${fmt(o.subtotal)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>ISV (${((o.isvRate || 0.15) * 100).toFixed(0)}%):</span><span>${fmt(o.isv)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:900;font-size:13px"><span>TOTAL:</span><span>${fmt(o.total)}</span></div>
+                    ${line}
+                    <div style="display:flex;justify-content:space-between"><span>Forma de pago:</span><span>${methodLabel}</span></div>
+                    ${cashBlock}
+                    ${caiBlock}
+                    ${line}
+                    <div style="text-align:center;font-size:10px">"La factura es beneficio de todos — ¡Exíjala!"</div>
+                    <div style="text-align:center;font-size:10px">Gracias por su preferencia 🍲</div>
+                `;
+            },
+
+            // ===== CONFIG =====
+            switchConfigTab(tab) {
+                ['fiscal', 'kds', 'negocio'].forEach(t => {
+                    document.getElementById(`cfgtab-${t}`).classList.toggle('active', t === tab);
+                    document.getElementById(`cfg-${t}`).classList.toggle('hidden', t !== tab);
+                });
+            },
+            fillConfigForms() {
+                const c = this.state.config; const f = this.state.fiscal;
+                document.getElementById('cfg-kds-yellow').value = c.kdsYellowLimit ?? 5;
+                document.getElementById('cfg-kds-red').value = c.kdsRedLimit ?? 15;
+                document.getElementById('cfg-isv-rate').value = ((c.isvRate ?? 0.15) * 100).toFixed(2);
+                document.getElementById('cfg-low-stock').value = c.lowStockThreshold ?? 10;
+                document.getElementById('cfg-price-incl-isv').checked = c.priceIncludesIsv !== false;
+                ['razonSocial','rtn','direccion','telefono','correo','cai','fechaLimite','tipoDoc','prefix'].forEach(k => {
+                    const el = document.getElementById(`fcfg-${k}`); if (el) el.value = f[k] || '';
+                });
+                document.getElementById('fcfg-rangoFrom').value = f.rangoFrom || '';
+                document.getElementById('fcfg-rangoTo').value = f.rangoTo || '';
+                this.updateFiscalPreview();
+                ['fcfg-prefix','fcfg-rangoFrom','fcfg-rangoTo'].forEach(id => {
+                    document.getElementById(id).oninput = () => this.updateFiscalPreview();
+                });
+            },
+            updateFiscalPreview() {
+                const prefix = document.getElementById('fcfg-prefix').value.trim();
+                const from = parseInt(document.getElementById('fcfg-rangoFrom').value) || 0;
+                const to = parseInt(document.getElementById('fcfg-rangoTo').value) || 0;
+                const next = Math.max(this.state.counter + 1, from);
+                document.getElementById('fcfg-preview-next').innerText = prefix ? `${prefix}-${this.padNumber(next)}` : `#${next}`;
+                const used = Math.max(0, this.state.counter - (from - 1));
+                const total = Math.max(0, to - from + 1);
+                document.getElementById('fcfg-preview-stock').innerText = `${used} / ${total}`;
+                const status = document.getElementById('cai-status');
+                const statusText = document.getElementById('cai-status-text');
+                if (!this.state.fiscal.cai) {
+                    status.classList.remove('hidden');
+                    statusText.innerText = 'CAI pendiente de configuración';
+                } else if (total > 0 && used >= total * 0.9) {
+                    status.classList.remove('hidden');
+                    statusText.innerText = `CAI por agotarse: ${total - used} disponibles`;
+                } else {
+                    status.classList.add('hidden');
+                }
+            },
+            async saveKdsConfig(e) {
+                e.preventDefault(); if (!db) return;
+                const btn = document.getElementById('btn-save-cfg'); btn.disabled = true; btn.innerText = 'Guardando...';
                 const yellow = parseInt(document.getElementById('cfg-kds-yellow').value);
                 const red = parseInt(document.getElementById('cfg-kds-red').value);
-                
-                if(yellow >= red) { alert("Error: El tiempo de alerta amarilla debe ser MENOR al tiempo de alerta roja."); btn.disabled = false; btn.innerText = "Guardar Configuración"; return; }
-
+                if (yellow >= red) { this.toast('La alerta amarilla debe ser MENOR que la roja', 'error'); btn.disabled = false; btn.innerText = 'Guardar Configuración'; return; }
                 try {
-                    await db.collection("settings").doc("general").set({ kdsYellowLimit: yellow, kdsRedLimit: red }, {merge: true});
-                    btn.innerText = "¡Actualizado!"; btn.classList.replace('bg-slate-800', 'bg-emerald-500');
-                    setTimeout(() => { btn.innerText = "Guardar Configuración"; btn.classList.replace('bg-emerald-500', 'bg-slate-800'); btn.disabled = false;}, 2000);
-                } catch(err) { console.error(err); btn.innerText = "Error"; btn.disabled = false; }
+                    await db.collection('settings').doc('general').set({ kdsYellowLimit: yellow, kdsRedLimit: red }, { merge: true });
+                    this.toast('Configuración KDS guardada', 'success');
+                } catch (err) { this.toast('Error al guardar', 'error'); }
+                finally { btn.disabled = false; btn.innerText = 'Guardar Configuración'; }
+            },
+            async saveBusinessConfig(e) {
+                e.preventDefault(); if (!db) return;
+                const btn = document.getElementById('btn-save-biz'); btn.disabled = true; btn.innerText = 'Guardando...';
+                try {
+                    const isvPct = parseFloat(document.getElementById('cfg-isv-rate').value);
+                    await db.collection('settings').doc('general').set({
+                        isvRate: isvPct / 100,
+                        lowStockThreshold: parseInt(document.getElementById('cfg-low-stock').value),
+                        priceIncludesIsv: document.getElementById('cfg-price-incl-isv').checked
+                    }, { merge: true });
+                    this.toast('Reglas de negocio actualizadas', 'success');
+                } catch (err) { this.toast('Error al guardar', 'error'); }
+                finally { btn.disabled = false; btn.innerText = 'Guardar Reglas'; }
+            },
+            async saveFiscalConfig(e) {
+                e.preventDefault(); if (!db) return;
+                const btn = document.getElementById('btn-save-fiscal'); btn.disabled = true; btn.innerText = 'Guardando...';
+                try {
+                    const data = {
+                        razonSocial: document.getElementById('fcfg-razonSocial').value.trim(),
+                        rtn: document.getElementById('fcfg-rtn').value.trim(),
+                        direccion: document.getElementById('fcfg-direccion').value.trim(),
+                        telefono: document.getElementById('fcfg-telefono').value.trim(),
+                        correo: document.getElementById('fcfg-correo').value.trim(),
+                        cai: document.getElementById('fcfg-cai').value.trim(),
+                        fechaLimite: document.getElementById('fcfg-fechaLimite').value,
+                        tipoDoc: document.getElementById('fcfg-tipoDoc').value,
+                        prefix: document.getElementById('fcfg-prefix').value.trim(),
+                        rangoFrom: parseInt(document.getElementById('fcfg-rangoFrom').value) || 0,
+                        rangoTo: parseInt(document.getElementById('fcfg-rangoTo').value) || 0
+                    };
+                    if (data.rangoFrom && data.rangoTo && data.rangoFrom > data.rangoTo) { this.toast('El rango "Desde" no puede ser mayor que "Hasta"', 'error'); btn.disabled = false; btn.innerText = 'Guardar Datos Fiscales'; return; }
+                    await db.collection('settings').doc('fiscal').set(data, { merge: true });
+                    if (data.rangoFrom > 0 && this.state.counter < (data.rangoFrom - 1)) {
+                        const ok = await this.confirm({ title: 'Sincronizar correlativo', msg: `El contador actual (${this.state.counter}) es menor al inicio del rango (${data.rangoFrom}).<br>¿Desea ajustar el contador a <strong>${data.rangoFrom - 1}</strong> para que la próxima factura sea la <strong>${data.rangoFrom}</strong>?`, okText: 'Sí, ajustar', icon: '🔢', okColor: 'amber' });
+                        if (ok) {
+                            await db.collection('counters').doc('orders').set({ count: data.rangoFrom - 1 }, { merge: true });
+                            this.toast('Contador sincronizado', 'success');
+                        }
+                    }
+                    this.toast('Datos fiscales guardados', 'success');
+                } catch (err) { console.error(err); this.toast('Error al guardar', 'error'); }
+                finally { btn.disabled = false; btn.innerText = 'Guardar Datos Fiscales'; }
             },
 
-            // --- KDS ---
+            // ===== KDS =====
             renderKDS() {
                 const grid = document.getElementById('kds-grid'); const empty = document.getElementById('kds-empty'); const badge = document.getElementById('kds-badge');
                 grid.innerHTML = ''; document.getElementById('kds-count').innerText = this.state.activeOrders.length;
-                if(this.state.activeOrders.length > 0) {
-                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden'); empty.classList.add('hidden'); grid.classList.remove('hidden'); grid.classList.add('flex');
+                if (this.state.activeOrders.length > 0) {
+                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden');
+                    empty.classList.add('hidden'); grid.classList.remove('hidden'); grid.classList.add('flex');
                     const now = new Date();
-                    
-                    // Extraer los limites de la configuración cargada
-                    const limitY = this.state.config.kdsYellowLimit;
-                    const limitR = this.state.config.kdsRedLimit;
-
-                    this.state.activeOrders.forEach(order => {
-                        const diffMs = now - order.dateObj; const diffMins = Math.floor(diffMs / 60000);
-                        let headerBg = 'bg-emerald-100'; let headerText = 'text-emerald-800'; let borderCol = 'border-emerald-400'; let timeBadge = `<span class="bg-emerald-200 text-emerald-900 px-2 py-1 rounded text-xs font-black">${diffMins} min</span>`; let pingHTML = '';
-
-                        // Lógica parametrizada
+                    const limitY = this.state.config.kdsYellowLimit; const limitR = this.state.config.kdsRedLimit;
+                    [...this.state.activeOrders].sort((a, b) => a.dateObj - b.dateObj).forEach(order => {
+                        const diffMins = Math.floor((now - order.dateObj) / 60000);
+                        let headerBg = 'bg-emerald-100', headerText = 'text-emerald-800', borderCol = 'border-emerald-400';
+                        let timeBadge = `<span class="bg-emerald-200 text-emerald-900 px-2 py-1 rounded text-xs font-black">${diffMins} min</span>`;
+                        let pingHTML = '';
                         if (diffMins >= limitR) {
-                            headerBg = 'bg-rose-100'; headerText = 'text-rose-800'; borderCol = 'border-rose-500'; timeBadge = `<span class="bg-rose-500 text-white px-2 py-1 rounded text-xs font-black shadow-md">${diffMins} min</span>`; pingHTML = `<span class="flex h-4 w-4 absolute -top-2 -right-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-4 w-4 bg-rose-600 shadow"></span></span>`;
+                            headerBg = 'bg-rose-100'; headerText = 'text-rose-800'; borderCol = 'border-rose-500';
+                            timeBadge = `<span class="bg-rose-500 text-white px-2 py-1 rounded text-xs font-black shadow-md">${diffMins} min</span>`;
+                            pingHTML = `<span class="flex h-4 w-4 absolute -top-2 -right-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-4 w-4 bg-rose-600 shadow"></span></span>`;
                         } else if (diffMins >= limitY) {
-                            headerBg = 'bg-amber-100'; headerText = 'text-amber-800'; borderCol = 'border-amber-400'; timeBadge = `<span class="bg-amber-300 text-amber-900 px-2 py-1 rounded text-xs font-black">${diffMins} min</span>`;
+                            headerBg = 'bg-amber-100'; headerText = 'text-amber-800'; borderCol = 'border-amber-400';
+                            timeBadge = `<span class="bg-amber-300 text-amber-900 px-2 py-1 rounded text-xs font-black">${diffMins} min</span>`;
                         }
-
-                        let html = ''; order.items.forEach(i => html += `<div class="border-b border-slate-100 py-4 font-bold text-slate-700 text-xl flex items-start gap-4"><span class="bg-slate-800 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm">${i.qty}</span> <span class="leading-tight">${i.name}</span></div>`);
-                    
-                        
-                        grid.innerHTML += `<div class="snap-start shrink-0 w-80 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border-t-8 ${borderCol} flex flex-col relative h-[60vh] max-h-[600px] overflow-hidden">${pingHTML}<div class="${headerBg} p-5 flex justify-between items-center"><span class="font-black ${headerText} text-2xl tracking-tighter">#${order.number}</span>${timeBadge}</div><div class="p-5 flex-1 overflow-y-auto bg-white/50">${html}</div><div class="p-4 bg-slate-50 border-t border-slate-100"><button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-slate-800 hover:bg-slate-900 transition-colors text-white font-black py-4 rounded-xl text-lg tracking-widest shadow-md">DESPACHAR</button></div></div>`;
+                        const typeBadge = { mesa: '🍽️', llevar: '🥡', delivery: '🛵' }[order.type] || '';
+                        const tableStr = order.type === 'mesa' && order.tableNumber ? ` Mesa ${order.tableNumber}` : '';
+                        const itemsHTML = (order.items || []).map(i => {
+                            const noteHTML = i.note ? `<div class="text-xs italic text-amber-700 bg-amber-50 px-2 py-1 rounded mt-1 ml-12">📝 ${i.note}</div>` : '';
+                            return `<div class="border-b border-slate-100 py-3 font-bold text-slate-700 text-lg flex items-start gap-3"><span class="bg-slate-800 text-white w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm">${i.qty}</span><span class="leading-tight">${i.name}</span></div>${noteHTML}`;
+                        }).join('');
+                        grid.innerHTML += `<div class="snap-start shrink-0 w-80 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border-t-8 ${borderCol} flex flex-col relative h-[60vh] max-h-[600px] overflow-hidden">${pingHTML}
+                            <div class="${headerBg} p-4 flex justify-between items-center">
+                                <div>
+                                    <span class="font-black ${headerText} text-2xl tracking-tighter">#${order.number}</span>
+                                    <div class="text-[10px] font-bold ${headerText} opacity-70 uppercase tracking-widest">${typeBadge}${tableStr}</div>
+                                </div>
+                                ${timeBadge}
+                            </div>
+                            <div class="p-4 flex-1 overflow-y-auto bg-white/50">${itemsHTML}</div>
+                            <div class="p-3 bg-slate-50 border-t border-slate-100">
+                                <button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-3 rounded-xl text-base tracking-widest shadow-md">DESPACHAR</button>
+                            </div>
+                        </div>`;
                     });
                 } else { badge.classList.add('hidden'); grid.classList.remove('flex'); grid.classList.add('hidden'); empty.classList.remove('hidden'); empty.classList.add('flex'); }
             },
-            async completeOrder(orderId) { if(!db) return; try { await db.collection("orders").doc(orderId).update({ status: 'listo' }); } catch (error) { console.error(error); } },
+            async completeOrder(orderId) { if (!db) return; try { await db.collection('orders').doc(orderId).update({ status: 'listo', completedAt: firebase.firestore.FieldValue.serverTimestamp() }); this.toast('Orden despachada', 'success'); } catch (e) { this.toast('Error', 'error'); } },
 
-            // --- HISTORIAL ---
-            renderHistory() {
-                const tbody = document.getElementById('historial-tbody'); const empty = document.getElementById('historial-empty'); const container = document.getElementById('historial-container'); tbody.innerHTML = '';
-                if(this.state.salesHistory.length > 0) {
-                    empty.classList.replace('block', 'hidden'); container.classList.remove('hidden');
-                    const sortedHistory = [...this.state.salesHistory].sort((a, b) => b.dateObj - a.dateObj);
-                    sortedHistory.forEach(order => {
-                        let itemsHtml = order.items.map(i => `<span class="font-black text-slate-800">${i.qty}x</span> ${i.name}`).join('<br>');
-                        let timeStr = order.dateObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
-                        let methodIcon = order.method === 'efectivo' ? '💵 Efect.' : '💳 Tarjeta';
-                        let userDisplay = order.user ? order.user.split('@')[0] : 'Admin/Legado'; // Fix for older orders without user field
-                        const isAnulado = order.status === 'anulado'; const rowClass = isAnulado ? 'bg-rose-50/50' : 'hover:bg-slate-50 transition-colors'; const textClass = isAnulado ? 'line-through text-slate-300' : 'text-slate-800';
-                        const actionBtn = isAnulado ? `<span class="bg-rose-100 text-rose-600 font-black px-3 py-1.5 rounded-lg text-xs uppercase tracking-widest border border-rose-200">Anulada</span>` : `<button onclick="window.app.annulOrder('${order.id}')" class="text-rose-500 hover:text-white font-bold text-xs uppercase tracking-widest bg-white border border-rose-200 hover:bg-rose-500 hover:border-rose-500 px-4 py-2 rounded-lg shadow-sm transition-all">Anular</button>`;
-                        tbody.innerHTML += `<tr class="${rowClass} border-b border-slate-100 last:border-0"><td class="px-8 py-5"><div class="font-black text-slate-800 text-xl tracking-tight">#${order.number}</div><div class="text-xs text-slate-400 font-semibold mt-1">${timeStr}</div></td><td class="px-8 py-5 text-sm font-medium text-slate-600 leading-relaxed">${itemsHtml}</td><td class="px-8 py-5 text-sm"><div class="font-bold text-slate-700">${methodIcon}</div><div class="text-[10px] uppercase tracking-widest text-slate-400 mt-1 font-bold">${userDisplay}</div></td><td class="px-8 py-5 text-right font-black ${textClass} text-xl tracking-tighter">L. ${order.total.toFixed(2)}</td><td class="px-8 py-5 text-center">${actionBtn}</td></tr>`;
-                    });
-                } else { container.classList.add('hidden'); empty.classList.replace('hidden', 'block'); }
+            // ===== HISTORIAL =====
+            setHistoryFilter(f) {
+                this.state.historyFilter = f;
+                document.querySelectorAll('[id^=hist-]').forEach(b => { b.classList.remove('active', 'bg-slate-800', 'text-white'); b.classList.add('text-slate-500'); });
+                const active = document.getElementById(`hist-${f}`); if (active) { active.classList.add('active'); active.classList.remove('text-slate-500'); }
+                this.renderHistory();
             },
-            async annulOrder(orderId) { if(!db) return; if(!confirm("⚠️ ¿ANULAR FACTURA?")) return; try { const order = this.state.salesHistory.find(o => o.id === orderId); if(!order) return; const batch = db.batch(); const orderRef = db.collection("orders").doc(orderId); batch.update(orderRef, { status: 'anulado' }); order.items.forEach(item => { const invRef = db.collection("inventory").doc(item.id); batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(item.qty) }); }); await batch.commit(); } catch (error) { console.error(error); } },
+            renderHistory() {
+                const tbody = document.getElementById('historial-tbody');
+                const empty = document.getElementById('historial-empty');
+                const container = document.getElementById('historial-container');
+                tbody.innerHTML = '';
+                const all = this.state.salesHistory.filter(o => o.dateObj instanceof Date);
+                const filtered = this.filterByPeriod(all, this.state.historyFilter);
+                if (filtered.length > 0) {
+                    empty.classList.add('hidden'); container.classList.remove('hidden');
+                    [...filtered].sort((a, b) => b.dateObj - a.dateObj).forEach(order => {
+                        const itemsHtml = order.items.map(i => `<span class="font-black text-slate-800">${i.qty}×</span> ${i.name}${i.note ? ` <em class="text-amber-600">[${i.note}]</em>` : ''}`).join('<br>');
+                        const timeStr = order.dateObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                        const methodIcon = order.method === 'efectivo' ? '💵 Efect.' : '💳 Tarjeta';
+                        const userDisplay = order.user ? order.user.split('@')[0] : '—';
+                        const isAnulado = order.status === 'anulado';
+                        const rowClass = isAnulado ? 'bg-rose-50/50' : 'hover:bg-slate-50';
+                        const textClass = isAnulado ? 'line-through text-slate-300' : 'text-slate-800';
+                        const actions = isAnulado
+                            ? `<span class="bg-rose-100 text-rose-600 font-black px-3 py-1.5 rounded-lg text-xs uppercase tracking-widest border border-rose-200">Anulada</span>`
+                            : `<div class="flex gap-2 justify-center"><button onclick="window.app.reprintOrder('${order.id}')" title="Reimprimir" class="bg-white border-2 border-slate-200 text-slate-600 hover:border-slate-800 hover:text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">🖨️</button><button onclick="window.app.annulOrder('${order.id}')" class="text-rose-500 hover:text-white font-bold text-xs uppercase tracking-widest bg-white border border-rose-200 hover:bg-rose-500 hover:border-rose-500 px-3 py-1.5 rounded-lg shadow-sm transition-all">Anular</button></div>`;
+                        tbody.innerHTML += `<tr class="${rowClass} border-b border-slate-100 last:border-0">
+                            <td class="px-6 py-4">
+                                <div class="font-black text-slate-800 text-lg">#${order.number}</div>
+                                <div class="text-[10px] font-mono text-slate-400">${order.correlative || '—'}</div>
+                                <div class="text-xs text-slate-400 font-semibold mt-1">${timeStr}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-slate-600 leading-relaxed max-w-md">${itemsHtml}</td>
+                            <td class="px-6 py-4 text-sm"><div class="font-bold text-slate-700">${methodIcon}</div><div class="text-[10px] uppercase tracking-widest text-slate-400 mt-1 font-bold">${userDisplay}</div>${order.customer && order.customer.name ? `<div class="text-xs text-slate-500 mt-1">👤 ${order.customer.name}</div>` : ''}</td>
+                            <td class="px-6 py-4 text-right font-black ${textClass} text-lg tracking-tighter">${this.fmt(order.total)}</td>
+                            <td class="px-6 py-4 text-center">${actions}</td>
+                        </tr>`;
+                    });
+                } else { container.classList.add('hidden'); empty.classList.remove('hidden'); }
+            },
+            async annulOrder(orderId) {
+                if (!db) return;
+                const reason = await this.confirm({ title: 'Anular Factura', msg: 'Esta acción restituye el stock al inventario y marca la factura como anulada.<br>Esta operación queda registrada.', okText: 'Sí, anular', icon: '🗑️', okColor: 'rose', withInput: true });
+                if (!reason) return;
+                try {
+                    const order = this.state.salesHistory.find(o => o.id === orderId); if (!order) return;
+                    const batch = db.batch();
+                    const orderRef = db.collection('orders').doc(orderId);
+                    batch.update(orderRef, {
+                        status: 'anulado',
+                        annulledAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        annulledBy: firebase.auth().currentUser.email,
+                        annulReason: typeof reason === 'string' ? reason : ''
+                    });
+                    order.items.forEach(item => {
+                        const invRef = db.collection('inventory').doc(item.id);
+                        batch.update(invRef, { stock: firebase.firestore.FieldValue.increment(item.qty) });
+                    });
+                    await batch.commit();
+                    this.toast('Factura anulada', 'success');
+                } catch (e) { this.toast('Error al anular', 'error'); }
+            },
+            reprintOrder(orderId) {
+                const order = this.state.salesHistory.find(o => o.id === orderId) || this.state.activeOrders.find(o => o.id === orderId);
+                if (!order) return this.toast('Orden no encontrada', 'error');
+                this.showTicket(order);
+            },
 
-            // --- INVENTARIO ---
-            async addProduct(e) { e.preventDefault(); if(!db) return; const btn = document.getElementById('btn-save-product'); btn.disabled = true; try { await db.collection("inventory").add({ name: document.getElementById('new-name').value, price: parseFloat(document.getElementById('new-price').value), cost: parseFloat(document.getElementById('new-cost').value), stock: parseInt(document.getElementById('new-stock').value), icon: '🍲' }); e.target.reset(); } catch (error) { console.error(error); } finally { btn.disabled = false; } },
-            async deleteProduct(id) { if(!db) return; if(confirm("¿Borrar producto?")) { try { await db.collection("inventory").doc(id).delete(); } catch (error) { console.error(error); } } },
-            openEditModal(id) { const product = this.state.inventory.find(p => p.id === id); if(!product) return; document.getElementById('edit-id').value = product.id; document.getElementById('edit-name').value = product.name; document.getElementById('edit-price').value = product.price; document.getElementById('edit-cost').value = product.cost; document.getElementById('edit-stock').value = product.stock; document.getElementById('modal-edit-product').classList.remove('hidden'); },
+            // ===== INVENTARIO =====
+            populateCategorySelects() {
+                ['new-category', 'edit-category', 'inv-category'].forEach(id => {
+                    const sel = document.getElementById(id); if (!sel) return;
+                    const opts = this.CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+                    sel.innerHTML = (id === 'inv-category' ? `<option value="todos">Todas las categorías</option>` : '') + opts;
+                });
+            },
+            renderIconGrid(gridId, inputId) {
+                const grid = document.getElementById(gridId); if (!grid) return;
+                const currentIcon = document.getElementById(inputId).value || '🍲';
+                grid.innerHTML = this.ICONS.map(ic => `<span onclick="window.app.selectIcon('${ic}','${gridId}','${inputId}')" class="icon-pick ${ic === currentIcon ? 'selected' : ''}">${ic}</span>`).join('');
+            },
+            selectIcon(icon, gridId, inputId) {
+                document.getElementById(inputId).value = icon;
+                document.querySelectorAll(`#${gridId} .icon-pick`).forEach(el => el.classList.toggle('selected', el.innerText === icon));
+            },
+            async addProduct(e) {
+                e.preventDefault(); if (!db) return;
+                const btn = document.getElementById('btn-save-product'); btn.disabled = true;
+                try {
+                    await db.collection('inventory').add({
+                        name: document.getElementById('new-name').value.trim(),
+                        category: document.getElementById('new-category').value,
+                        price: parseFloat(document.getElementById('new-price').value),
+                        cost: parseFloat(document.getElementById('new-cost').value),
+                        stock: parseInt(document.getElementById('new-stock').value),
+                        icon: document.getElementById('new-icon').value || '🍲'
+                    });
+                    e.target.reset();
+                    document.getElementById('new-icon').value = '🍲';
+                    this.renderIconGrid('new-icon-grid', 'new-icon');
+                    this.toast('Producto creado', 'success');
+                } catch (err) { this.toast('Error al crear', 'error'); }
+                finally { btn.disabled = false; }
+            },
+            async deleteProduct(id) {
+                const ok = await this.confirm({ title: 'Eliminar producto', msg: 'El producto se borra del catálogo. No afecta facturas previas.', okText: 'Sí, eliminar', icon: '🗑️', okColor: 'rose' });
+                if (!ok) return;
+                try { await db.collection('inventory').doc(id).delete(); this.toast('Producto eliminado', 'success'); } catch (e) { this.toast('Error', 'error'); }
+            },
+            openEditModal(id) {
+                const product = this.state.inventory.find(p => p.id === id); if (!product) return;
+                document.getElementById('edit-id').value = product.id;
+                document.getElementById('edit-name').value = product.name;
+                document.getElementById('edit-category').value = product.category || 'otros';
+                document.getElementById('edit-price').value = product.price;
+                document.getElementById('edit-cost').value = product.cost;
+                document.getElementById('edit-stock').value = product.stock;
+                document.getElementById('edit-icon').value = product.icon || '🍲';
+                this.renderIconGrid('edit-icon-grid', 'edit-icon');
+                document.getElementById('modal-edit-product').classList.remove('hidden');
+            },
             closeEditModal() { document.getElementById('modal-edit-product').classList.add('hidden'); },
-            async saveEditedProduct(e) { e.preventDefault(); if(!db) return; const btn = document.getElementById('btn-update-product'); btn.disabled = true; const id = document.getElementById('edit-id').value; try { await db.collection("inventory").doc(id).update({ name: document.getElementById('edit-name').value, price: parseFloat(document.getElementById('edit-price').value), cost: parseFloat(document.getElementById('edit-cost').value), stock: parseInt(document.getElementById('edit-stock').value) }); this.closeEditModal(); } catch (error) { console.error(error); } finally { btn.disabled = false; } },
-            renderInventory() { const tbody = document.getElementById('inventory-tbody'); tbody.innerHTML = ''; this.state.inventory.forEach(item => { tbody.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors"><td class="px-8 py-5 font-bold text-slate-800 text-lg flex items-center gap-3"><span class="text-2xl">${item.icon || '🍲'}</span> ${item.name}</td><td class="px-8 py-5 text-sm"><div class="font-black text-emerald-600 text-lg">L. ${item.price.toFixed(2)}</div><div class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Costo: L.${item.cost.toFixed(2)}</div></td><td class="px-8 py-5"><span class="bg-slate-100 text-slate-800 font-black px-3 py-1.5 rounded-lg border border-slate-200">${item.stock} uds</span></td><td class="px-8 py-5 text-right flex justify-end gap-2"><button onclick="window.app.openEditModal('${item.id}')" class="bg-white border-2 border-slate-200 text-slate-600 px-4 py-2 rounded-xl hover:border-slate-800 hover:text-slate-800 font-bold transition-colors">✏️</button><button onclick="window.app.deleteProduct('${item.id}')" class="bg-white border-2 border-rose-100 text-rose-500 px-4 py-2 rounded-xl hover:bg-rose-50 hover:border-rose-200 font-bold transition-colors">✖</button></td></tr>`; }); },
+            async saveEditedProduct(e) {
+                e.preventDefault(); if (!db) return;
+                const btn = document.getElementById('btn-update-product'); btn.disabled = true;
+                const id = document.getElementById('edit-id').value;
+                try {
+                    await db.collection('inventory').doc(id).update({
+                        name: document.getElementById('edit-name').value.trim(),
+                        category: document.getElementById('edit-category').value,
+                        price: parseFloat(document.getElementById('edit-price').value),
+                        cost: parseFloat(document.getElementById('edit-cost').value),
+                        stock: parseInt(document.getElementById('edit-stock').value),
+                        icon: document.getElementById('edit-icon').value || '🍲'
+                    });
+                    this.closeEditModal();
+                    this.toast('Producto actualizado', 'success');
+                } catch (err) { this.toast('Error al actualizar', 'error'); }
+                finally { btn.disabled = false; }
+            },
+            setInvSearch(v) { this.state.invSearch = v.toLowerCase(); this.renderInventory(); },
+            setInvCategory(c) { this.state.invCategory = c; this.renderInventory(); },
+            renderInventory() {
+                const tbody = document.getElementById('inventory-tbody'); if (!tbody) return;
+                tbody.innerHTML = '';
+                let items = [...this.state.inventory];
+                if (this.state.invCategory !== 'todos') items = items.filter(p => (p.category || 'otros') === this.state.invCategory);
+                if (this.state.invSearch) items = items.filter(p => p.name.toLowerCase().includes(this.state.invSearch));
+                items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                items.forEach(item => {
+                    const margin = item.price > 0 ? (((item.price - item.cost) / item.price) * 100).toFixed(0) : 0;
+                    const marginColor = margin >= 60 ? 'text-emerald-600' : margin >= 30 ? 'text-amber-600' : 'text-rose-500';
+                    const low = item.stock <= (this.state.config.lowStockThreshold || 10);
+                    const stockBadge = item.stock <= 0 ? 'bg-rose-100 text-rose-700 border-rose-200' : low ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-800 border-slate-200';
+                    tbody.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="px-6 py-4 font-bold text-slate-800 text-base flex items-center gap-3"><span class="text-2xl">${item.icon || '🍲'}</span> ${item.name}</td>
+                        <td class="px-6 py-4"><span class="text-xs font-bold text-slate-500">${this.getCategoryLabel(item.category || 'otros')}</span></td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="font-black text-emerald-600">L. ${Number(item.price).toFixed(2)}</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Costo: L.${Number(item.cost).toFixed(2)}</div>
+                            <div class="text-xs font-black ${marginColor}">Margen: ${margin}%</div>
+                        </td>
+                        <td class="px-6 py-4"><span class="${stockBadge} font-black px-3 py-1.5 rounded-lg border">${item.stock} uds</span></td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick="window.app.openEditModal('${item.id}')" class="bg-white border-2 border-slate-200 text-slate-600 px-3 py-2 rounded-xl hover:border-slate-800 hover:text-slate-800 font-bold">✏️</button>
+                                <button onclick="window.app.deleteProduct('${item.id}')" class="bg-white border-2 border-rose-100 text-rose-500 px-3 py-2 rounded-xl hover:bg-rose-50 font-bold">✖</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                if (items.length === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-400 py-12 font-medium">Sin productos para mostrar.</td></tr>';
+            },
 
-            // --- REPORTES ---
-            getFilteredOrders(type) { const now = new Date(); let startOfPeriod = new Date(); if(type === 'hoy') { startOfPeriod.setHours(0,0,0,0); } else if(type === 'semana') { const day = startOfPeriod.getDay(); const diff = startOfPeriod.getDate() - day + (day === 0 ? -6 : 1); startOfPeriod = new Date(startOfPeriod.setDate(diff)); startOfPeriod.setHours(0,0,0,0); } else if(type === 'mes') { startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1); } else { startOfPeriod = new Date(0); } const validOrders = []; [...this.state.salesHistory, ...this.state.activeOrders].forEach(order => { if(order.dateObj >= startOfPeriod && order.status !== 'anulado') validOrders.push(order); }); return validOrders; },
-            updateDashboard() { if(!this.state.isAdmin) return; this.updateHeaderDate(); let totalVentas = 0; let ordenesUnicas = new Set(); const ordersToday = this.getFilteredOrders('hoy'); ordersToday.forEach(o => { totalVentas += o.total; ordenesUnicas.add(o.number); }); document.getElementById('dash-ventas').innerText = `L. ${totalVentas.toFixed(2)}`; document.getElementById('dash-ordenes').innerText = ordenesUnicas.size; document.getElementById('dash-alertas').innerText = this.state.inventory.filter(p => p.stock <= 10).length; },
-            setReportFilter(filter) { this.state.reportFilter = filter; document.querySelectorAll('.filter-btn').forEach(btn => { btn.classList.remove('active', 'bg-slate-800', 'text-white', 'shadow-md'); btn.classList.add('text-slate-500'); }); const activeBtn = document.getElementById(`filter-${filter}`); activeBtn.classList.add('active', 'bg-slate-800', 'text-white', 'shadow-md'); activeBtn.classList.remove('text-slate-500'); this.renderChart(); },
-            renderChart() { if(!this.state.isAdmin) return; const ctx = document.getElementById('accountingChart').getContext('2d'); const agg = {}; let displayRevenue = 0; let displayCost = 0; const filteredOrders = this.getFilteredOrders(this.state.reportFilter); filteredOrders.forEach(order => { order.items.forEach(item => { if(!agg[item.name]) agg[item.name] = { revenue: 0, cost: 0 }; const itemRev = item.price * item.qty; const itemCost = item.cost * item.qty; agg[item.name].revenue += itemRev; agg[item.name].cost += itemCost; displayRevenue += itemRev; displayCost += itemCost; }); }); document.getElementById('report-revenue').innerText = `L. ${displayRevenue.toFixed(2)}`; document.getElementById('report-cost').innerText = `L. ${displayCost.toFixed(2)}`; document.getElementById('report-profit').innerText = `L. ${(displayRevenue - displayCost).toFixed(2)}`; const labels = Object.keys(agg); const costData = labels.map(l => agg[l].cost); const profitData = labels.map(l => agg[l].revenue - agg[l].cost); if (this.state.chartInstance) this.state.chartInstance.destroy(); if(labels.length === 0) return; this.state.chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia Neta (L)', data: profitData, backgroundColor: '#10b981', borderRadius: 4 }, { label: 'Costo (L)', data: costData, backgroundColor: '#f43f5e', borderRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom' } } } }); },
-            downloadCSV() { const validOrders = this.state.salesHistory.filter(o => o.status !== 'anulado'); if(validOrders.length === 0) { alert("No hay ventas válidas para exportar."); return; } let csv = "data:text/csv;charset=utf-8,Orden,Fecha,Cajero,Producto,Cantidad,Ingreso_L,Costo_L\r\n"; validOrders.forEach(order => { const fechaStr = order.dateObj.toLocaleString('es-HN'); let userDisplay = order.user ? order.user.split('@')[0] : 'Admin/Legado'; order.items.forEach(item => { csv += `${order.number},${fechaStr},${userDisplay},${item.name},${item.qty},${item.price * item.qty},${item.cost * item.qty}\r\n`; }); }); const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Reporte_Contable_SPS.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+            // ===== FILTRO POR PERÍODO =====
+            filterByPeriod(orders, period) {
+                if (period === 'todos') return orders;
+                const now = new Date(); const start = new Date(); const end = new Date(now);
+                if (period === 'hoy') { start.setHours(0, 0, 0, 0); }
+                else if (period === 'ayer') { start.setDate(start.getDate() - 1); start.setHours(0, 0, 0, 0); end.setHours(0, 0, 0, 0); }
+                else if (period === 'semana') { const day = start.getDay(); const diff = start.getDate() - day + (day === 0 ? -6 : 1); start.setDate(diff); start.setHours(0, 0, 0, 0); }
+                else if (period === 'mes') { start.setDate(1); start.setHours(0, 0, 0, 0); }
+                else { return orders; }
+                return orders.filter(o => o.dateObj >= start && o.dateObj < end);
+            },
+            getFilteredOrders(period) {
+                const all = [...this.state.salesHistory, ...this.state.activeOrders].filter(o => o.status !== 'anulado');
+                return this.filterByPeriod(all, period);
+            },
+
+            // ===== DASHBOARD =====
+            updateDashboard() {
+                if (!this.state.isAdmin) return;
+                this.updateHeaderDate();
+                const today = this.getFilteredOrders('hoy');
+                const yesterday = this.filterByPeriod([...this.state.salesHistory, ...this.state.activeOrders].filter(o => o.status !== 'anulado'), 'ayer');
+                let revT = 0, costT = 0; today.forEach(o => { revT += o.total; o.items.forEach(i => costT += (i.cost || 0) * i.qty); });
+                let revY = 0; yesterday.forEach(o => revY += o.total);
+                const profit = revT - costT;
+                const margin = revT > 0 ? ((profit / revT) * 100).toFixed(0) : 0;
+                document.getElementById('dash-ventas').innerText = this.fmt(revT);
+                document.getElementById('dash-ordenes').innerText = today.length;
+                document.getElementById('dash-ticket-prom').innerText = `Ticket prom. ${this.fmt(today.length ? revT / today.length : 0)}`;
+                document.getElementById('dash-ganancia').innerText = this.fmt(profit);
+                document.getElementById('dash-margen').innerText = `Margen ${margin}%`;
+                document.getElementById('dash-alertas').innerText = this.state.inventory.filter(p => p.stock <= (this.state.config.lowStockThreshold || 10)).length;
+
+                const vsEl = document.getElementById('dash-ventas-vs');
+                if (revY > 0) {
+                    const delta = ((revT - revY) / revY) * 100;
+                    const sign = delta >= 0 ? '▲' : '▼';
+                    const color = delta >= 0 ? 'text-emerald-400' : 'text-rose-300';
+                    vsEl.className = `mt-2 ${color} text-xs font-semibold flex items-center gap-1`;
+                    vsEl.innerHTML = `${sign} ${Math.abs(delta).toFixed(0)}% vs ayer (${this.fmt(revY)})`;
+                } else { vsEl.innerText = 'Sin datos de ayer'; }
+
+                // Top sellers
+                const topAgg = {};
+                today.forEach(o => o.items.forEach(i => { if (!topAgg[i.name]) topAgg[i.name] = { qty: 0, rev: 0, icon: i.icon }; topAgg[i.name].qty += i.qty; topAgg[i.name].rev += i.price * i.qty; }));
+                const top = Object.entries(topAgg).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5);
+                const topEl = document.getElementById('dash-top-sellers');
+                if (top.length === 0) { topEl.innerHTML = '<div class="text-slate-400 text-sm py-8 text-center">Sin ventas hoy</div>'; }
+                else {
+                    const max = top[0][1].qty;
+                    topEl.innerHTML = top.map(([name, d]) => {
+                        const pct = (d.qty / max) * 100;
+                        return `<div><div class="flex justify-between mb-1"><span class="text-sm font-bold text-slate-700">${d.icon || '🍲'} ${name}</span><span class="text-xs font-black text-slate-500">${d.qty} uds</span></div><div class="bg-slate-100 rounded-full h-2 overflow-hidden"><div class="bg-gradient-to-r from-amber-400 to-amber-600 h-full rounded-full" style="width:${pct}%"></div></div></div>`;
+                    }).join('');
+                }
+
+                // Chart hora
+                this.renderHourlyChart('dashHourlyChart', today, 'chHour');
+            },
+
+            // ===== REPORTES =====
+            setReportFilter(filter) {
+                this.state.reportFilter = filter;
+                document.querySelectorAll('[id^=filter-]').forEach(b => { b.classList.remove('active', 'bg-slate-800', 'text-white'); b.classList.add('text-slate-500'); });
+                const a = document.getElementById(`filter-${filter}`); if (a) { a.classList.add('active'); a.classList.remove('text-slate-500'); }
+                this.renderReports();
+            },
+            renderReports() {
+                if (!this.state.isAdmin) return;
+                const orders = this.getFilteredOrders(this.state.reportFilter);
+                let rev = 0, cost = 0, isvTotal = 0;
+                orders.forEach(o => { rev += o.total; isvTotal += (o.isv || 0); o.items.forEach(i => cost += (i.cost || 0) * i.qty); });
+                const profit = rev - cost; const avg = orders.length ? rev / orders.length : 0;
+                document.getElementById('report-revenue').innerText = this.fmt(rev);
+                document.getElementById('report-isv').innerText = this.fmt(isvTotal);
+                document.getElementById('report-cost').innerText = this.fmt(cost);
+                document.getElementById('report-profit').innerText = this.fmt(profit);
+                document.getElementById('report-avg').innerText = this.fmt(avg);
+
+                this.renderHourlyChart('reportHourlyChart', orders, 'chRpHour');
+                this.renderPaymentChart(orders);
+                this.renderTopChart(orders);
+                this.renderAccountingChart(orders);
+            },
+
+            renderHourlyChart(canvasId, orders, key) {
+                const ctx = document.getElementById(canvasId); if (!ctx) return;
+                const hours = Array(24).fill(0);
+                orders.forEach(o => { const h = (o.dateObj || new Date()).getHours(); hours[h] += o.total; });
+                const labels = hours.map((_, i) => `${String(i).padStart(2, '0')}h`);
+                if (this.state.charts[key]) this.state.charts[key].destroy();
+                this.state.charts[key] = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Ventas (L)', data: hours, backgroundColor: '#f59e0b', borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            },
+
+            renderPaymentChart(orders) {
+                const ctx = document.getElementById('reportPaymentChart'); if (!ctx) return;
+                const agg = { efectivo: 0, tarjeta: 0 };
+                orders.forEach(o => { agg[o.method] = (agg[o.method] || 0) + o.total; });
+                if (this.state.charts.chPay) this.state.charts.chPay.destroy();
+                this.state.charts.chPay = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['💵 Efectivo', '💳 Tarjeta'], datasets: [{ data: [agg.efectivo, agg.tarjeta], backgroundColor: ['#10b981', '#3b82f6'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
+                });
+            },
+
+            renderTopChart(orders) {
+                const ctx = document.getElementById('reportTopChart'); if (!ctx) return;
+                const agg = {};
+                orders.forEach(o => o.items.forEach(i => { if (!agg[i.name]) agg[i.name] = 0; agg[i.name] += i.qty; }));
+                const sorted = Object.entries(agg).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                if (this.state.charts.chTop) this.state.charts.chTop.destroy();
+                this.state.charts.chTop = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: sorted.map(([n]) => n), datasets: [{ label: 'Unidades vendidas', data: sorted.map(([, q]) => q), backgroundColor: '#0f172a', borderRadius: 4 }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            },
+
+            renderAccountingChart(orders) {
+                const ctx = document.getElementById('accountingChart'); if (!ctx) return;
+                const agg = {};
+                orders.forEach(o => o.items.forEach(i => { if (!agg[i.name]) agg[i.name] = { revenue: 0, cost: 0 }; agg[i.name].revenue += i.price * i.qty; agg[i.name].cost += (i.cost || 0) * i.qty; }));
+                const labels = Object.keys(agg).slice(0, 15);
+                const costData = labels.map(l => agg[l].cost);
+                const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
+                if (this.state.charts.chAcc) this.state.charts.chAcc.destroy();
+                if (labels.length === 0) return;
+                this.state.charts.chAcc = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Ganancia', data: profitData, backgroundColor: '#10b981', borderRadius: 4 }, { label: 'Costo', data: costData, backgroundColor: '#f43f5e', borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom' } } }
+                });
+            },
+
+            downloadCSV() {
+                const orders = this.getFilteredOrders(this.state.reportFilter);
+                if (orders.length === 0) { this.toast('Sin datos para exportar', 'warn'); return; }
+                let csv = '﻿Correlativo,Numero,Fecha,Cajero,Tipo,Cliente,RTN_Cliente,Producto,Categoria,Cantidad,Precio_Unit,Costo_Unit,Subtotal_Linea,Costo_Linea,Metodo,ISV_Factura,Total_Factura\r\n';
+                orders.forEach(o => {
+                    const fecha = o.dateObj.toLocaleString('es-HN');
+                    const cajero = o.user ? o.user.split('@')[0] : '—';
+                    const cli = (o.customer && o.customer.name) || '';
+                    const rtn = (o.customer && o.customer.rtn) || '';
+                    o.items.forEach(i => {
+                        const cat = this.getCategoryLabel(i.category || 'otros');
+                        csv += `"${o.correlative || ''}",${o.number},"${fecha}","${cajero}",${o.type || ''},"${cli}","${rtn}","${i.name}","${cat}",${i.qty},${i.price},${i.cost || 0},${(i.price * i.qty).toFixed(2)},${((i.cost || 0) * i.qty).toFixed(2)},${o.method},${(o.isv || 0).toFixed(2)},${o.total.toFixed(2)}\r\n`;
+                    });
+                });
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url; link.download = `Reporte_SazonSPS_${this.state.reportFilter}_${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                this.toast('CSV descargado', 'success');
+            },
+
+            // ===== CIERRE =====
+            setCierreFilter(f) {
+                this.state.cierreFilter = f;
+                document.querySelectorAll('[id^=cierre-hoy],[id^=cierre-ayer],[id^=cierre-semana]').forEach(b => { b.classList.remove('active', 'bg-slate-800', 'text-white'); b.classList.add('text-slate-500'); });
+                const active = document.getElementById(`cierre-${f}`); if (active) { active.classList.add('active'); active.classList.remove('text-slate-500'); }
+                this.renderCierre();
+            },
+            renderCierre() {
+                const orders = this.getFilteredOrders(this.state.cierreFilter);
+                const anuladas = this.filterByPeriod(this.state.salesHistory.filter(o => o.status === 'anulado'), this.state.cierreFilter);
+                let efectivo = 0, tarjeta = 0, sub = 0, isvT = 0, costo = 0;
+                orders.forEach(o => {
+                    if (o.method === 'efectivo') efectivo += o.total; else tarjeta += o.total;
+                    sub += (o.subtotal || 0); isvT += (o.isv || 0);
+                    o.items.forEach(i => costo += (i.cost || 0) * i.qty);
+                });
+                const total = efectivo + tarjeta;
+                document.getElementById('cierre-tickets').innerText = orders.length;
+                document.getElementById('cierre-efectivo').innerText = this.fmt(efectivo);
+                document.getElementById('cierre-tarjeta').innerText = this.fmt(tarjeta);
+                document.getElementById('cierre-total').innerText = this.fmt(total);
+                document.getElementById('cierre-subtotal').innerText = this.fmt(sub);
+                document.getElementById('cierre-isv').innerText = this.fmt(isvT);
+                document.getElementById('cierre-costo').innerText = this.fmt(costo);
+                document.getElementById('cierre-ganancia').innerText = this.fmt(total - costo);
+                document.getElementById('cierre-anuladas').innerText = `${anuladas.length} facturas`;
+                this.calcArqueo();
+            },
+            calcArqueo() {
+                const fondo = parseFloat(document.getElementById('arqueo-fondo').value) || 0;
+                const contado = parseFloat(document.getElementById('arqueo-contado').value) || 0;
+                const ventasEfectivo = this.getFilteredOrders(this.state.cierreFilter).filter(o => o.method === 'efectivo').reduce((s, o) => s + o.total, 0);
+                const esperado = fondo + ventasEfectivo;
+                const dif = contado - esperado;
+                document.getElementById('arqueo-esperado').innerText = this.fmt(esperado);
+                const difEl = document.getElementById('arqueo-dif');
+                difEl.innerText = this.fmt(dif);
+                difEl.className = `font-black text-2xl ${dif > 0.01 ? 'text-emerald-300' : dif < -0.01 ? 'text-rose-300' : 'text-white'}`;
+            },
+            printCierre() {
+                const orders = this.getFilteredOrders(this.state.cierreFilter);
+                const periodo = { hoy: 'HOY', ayer: 'AYER', semana: 'ESTA SEMANA' }[this.state.cierreFilter] || '';
+                let ef = 0, tj = 0, sub = 0, isv = 0, costo = 0;
+                orders.forEach(o => { if (o.method === 'efectivo') ef += o.total; else tj += o.total; sub += (o.subtotal || 0); isv += (o.isv || 0); o.items.forEach(i => costo += (i.cost || 0) * i.qty); });
+                const total = ef + tj;
+                const line = '<hr style="border:0;border-top:1px dashed #000;margin:6px 0">';
+                const fmt = v => `L. ${Number(v).toFixed(2)}`;
+                const f = this.state.fiscal;
+                const fondo = parseFloat(document.getElementById('arqueo-fondo').value) || 0;
+                const contado = parseFloat(document.getElementById('arqueo-contado').value) || 0;
+                const dif = contado - (fondo + ef);
+                const html = `
+                    <div style="text-align:center"><h1 style="font-size:14px;font-weight:900">${f.razonSocial || 'Sazón SPS'}</h1>${f.rtn ? `<div>RTN: ${f.rtn}</div>` : ''}</div>
+                    ${line}<div style="text-align:center;font-weight:bold">CORTE / CIERRE DE CAJA</div>
+                    <div style="text-align:center">Período: ${periodo}</div>
+                    <div style="text-align:center;font-size:10px">${new Date().toLocaleString('es-HN')}</div>
+                    <div style="text-align:center;font-size:10px">Cajero: ${(firebase.auth().currentUser?.email || '').split('@')[0]}</div>
+                    ${line}
+                    <div style="display:flex;justify-content:space-between"><span>Tickets emitidos:</span><span>${orders.length}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${fmt(sub)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>ISV cobrado:</span><span>${fmt(isv)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>TOTAL BRUTO:</span><span>${fmt(total)}</span></div>
+                    ${line}
+                    <div style="display:flex;justify-content:space-between"><span>Efectivo:</span><span>${fmt(ef)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>Tarjeta/Transf:</span><span>${fmt(tj)}</span></div>
+                    ${line}
+                    <div style="display:flex;justify-content:space-between"><span>Costo productos:</span><span>${fmt(costo)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>GANANCIA:</span><span>${fmt(total - costo)}</span></div>
+                    ${line}
+                    <div style="font-weight:bold">ARQUEO EFECTIVO</div>
+                    <div style="display:flex;justify-content:space-between"><span>Fondo inicial:</span><span>${fmt(fondo)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>Ventas efectivo:</span><span>${fmt(ef)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>Esperado:</span><span>${fmt(fondo + ef)}</span></div>
+                    <div style="display:flex;justify-content:space-between"><span>Contado:</span><span>${fmt(contado)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>DIFERENCIA:</span><span>${fmt(dif)}</span></div>
+                    ${line}
+                    <div style="text-align:center;font-size:10px">_____________________________<br>Firma responsable</div>
+                `;
+                document.getElementById('ticket-content').innerHTML = html;
+                document.getElementById('modal-ticket').classList.remove('hidden');
+            }
         };
 
-        // --- INICIALIZACIÓN ---
+        // ===== INICIALIZACIÓN =====
         window.onload = () => {
             const firebaseConfig = { apiKey: "AIzaSyC1p8czf56NeSUboDYSzaSed4m2yJq2SDA", authDomain: "momb2b-3eb14.firebaseapp.com", projectId: "momb2b-3eb14", storageBucket: "momb2b-3eb14.firebasestorage.app", messagingSenderId: "440475320328", appId: "1:440475320328:web:4111a01d8e8fabbea891bd", measurementId: "G-Z0BYMW1H4W" };
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            
-            setInterval(() => { if(window.app.state.activeView === 'kds') window.app.renderKDS(); }, 60000);
+
+            setInterval(() => { if (window.app.state.activeView === 'kds') window.app.renderKDS(); }, 60000);
 
             firebase.auth().onAuthStateChanged((user) => {
-                const loginScreen = document.getElementById('login-layout'); const appScreen = document.getElementById('app-layout');
+                const loginScreen = document.getElementById('login-layout');
+                const appScreen = document.getElementById('app-layout');
                 if (user) {
                     loginScreen.classList.add('hidden'); appScreen.classList.remove('hidden');
                     window.app.applyRoles(user); db = firebase.firestore();
 
-                    // Cargar Configuración General
-                    db.collection("settings").doc("general").onSnapshot((doc) => {
-                        if(doc.exists) {
-                            window.app.state.config = doc.data();
-                            const yellowInput = document.getElementById('cfg-kds-yellow');
-                            const redInput = document.getElementById('cfg-kds-red');
-                            if(yellowInput) yellowInput.value = window.app.state.config.kdsYellowLimit || 5;
-                            if(redInput) redInput.value = window.app.state.config.kdsRedLimit || 15;
+                    // settings/general
+                    db.collection('settings').doc('general').onSnapshot((doc) => {
+                        if (doc.exists) window.app.state.config = { ...window.app.state.config, ...doc.data() };
+                        if (window.app.state.activeView === 'kds') window.app.renderKDS();
+                        if (window.app.state.activeView === 'pos') window.app.updateCartUI();
+                        if (window.app.state.activeView === 'configuracion') window.app.fillConfigForms();
+                        if (window.app.state.activeView === 'dashboard') window.app.updateDashboard();
+                    });
+
+                    // settings/fiscal
+                    db.collection('settings').doc('fiscal').onSnapshot((doc) => {
+                        if (doc.exists) window.app.state.fiscal = { ...window.app.state.fiscal, ...doc.data() };
+                        const status = document.getElementById('cai-status');
+                        const statusText = document.getElementById('cai-status-text');
+                        if (!window.app.state.fiscal.cai) {
+                            status.classList.remove('hidden');
+                            statusText.innerText = 'CAI pendiente de entrega';
+                        } else {
+                            status.classList.add('hidden');
                         }
-                        if(window.app.state.activeView === 'kds') window.app.renderKDS();
+                        if (window.app.state.activeView === 'configuracion') window.app.fillConfigForms();
                     });
 
-                    db.collection("inventory").onSnapshot((snapshot) => {
-                        window.app.state.inventory = []; snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
-                        if(window.app.state.isAdmin) { window.app.renderInventory(); window.app.updateDashboard(); } window.app.renderPOSMenu(); 
+                    // counters/orders
+                    db.collection('counters').doc('orders').onSnapshot((doc) => {
+                        window.app.state.counter = doc.exists ? (doc.data().count || 0) : 0;
+                        const num = document.getElementById('pos-order-number');
+                        if (num) num.innerText = window.app.state.counter + 1;
+                        if (window.app.state.activeView === 'configuracion') window.app.updateFiscalPreview();
                     });
 
-                    db.collection("orders").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
+                    // inventory
+                    db.collection('inventory').onSnapshot((snapshot) => {
+                        window.app.state.inventory = [];
+                        snapshot.forEach((doc) => window.app.state.inventory.push({ id: doc.id, ...doc.data() }));
+                        if (window.app.state.isAdmin && window.app.state.activeView === 'inventario') window.app.renderInventory();
+                        if (window.app.state.activeView === 'pos') window.app.renderPOSMenu();
+                        if (window.app.state.activeView === 'dashboard') window.app.updateDashboard();
+                    });
+
+                    // orders
+                    db.collection('orders').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
                         window.app.state.activeOrders = []; window.app.state.salesHistory = [];
+                        let maxNumber = 0;
                         snapshot.forEach((doc) => {
-                            const data = doc.data(); const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
-                            const order = { id: doc.id, dateObj: dateObj, ...data };
+                            const data = doc.data();
+                            const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                            const order = { id: doc.id, dateObj, ...data };
+                            if ((data.number || 0) > maxNumber) maxNumber = data.number || 0;
                             if (order.status === 'preparando') window.app.state.activeOrders.push(order);
                             else if (order.status === 'listo' || order.status === 'anulado') window.app.state.salesHistory.push(order);
                         });
-                        
-                        window.app.state.orderCounter = snapshot.size + 1;
-                        const orderNumDisplay = document.getElementById('pos-order-number'); if(orderNumDisplay) orderNumDisplay.innerText = window.app.state.orderCounter;
-                        
-                        window.app.renderKDS(); 
-                        if(window.app.state.isAdmin) { window.app.renderHistory(); window.app.updateDashboard(); if(window.app.state.activeView === 'reportes') window.app.renderChart(); }
+                        if (maxNumber > window.app.state.counter) {
+                            window.app.state.counter = maxNumber;
+                            const num = document.getElementById('pos-order-number');
+                            if (num) num.innerText = maxNumber + 1;
+                        }
+                        if (window.app.state.activeView === 'kds') window.app.renderKDS();
+                        if (window.app.state.isAdmin) {
+                            if (window.app.state.activeView === 'historial') window.app.renderHistory();
+                            if (window.app.state.activeView === 'dashboard') window.app.updateDashboard();
+                            if (window.app.state.activeView === 'reportes') window.app.renderReports();
+                            if (window.app.state.activeView === 'cierre') window.app.renderCierre();
+                        }
                     });
+
                 } else { loginScreen.classList.remove('hidden'); appScreen.classList.add('hidden'); }
             });
         };
