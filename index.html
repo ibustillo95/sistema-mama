@@ -31,25 +31,25 @@
             </div>
         </div>
         <nav class="flex-1 p-4 overflow-y-auto">
-            <div onclick="app.switchView('dashboard')" id="nav-dashboard" class="nav-item active">
+            <div onclick="window.app.switchView('dashboard')" id="nav-dashboard" class="nav-item active">
                 <span class="mr-3 text-xl">🏠</span> Inicio
             </div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Operaciones</div>
-            <div onclick="app.switchView('pos')" id="nav-pos" class="nav-item">
+            <div onclick="window.app.switchView('pos')" id="nav-pos" class="nav-item">
                 <span class="mr-3 text-xl">🛒</span> Punto de Venta
             </div>
-            <div onclick="app.switchView('kds')" id="nav-kds" class="nav-item">
+            <div onclick="window.app.switchView('kds')" id="nav-kds" class="nav-item">
                 <span class="mr-3 text-xl">👨‍🍳</span> Cocina <span id="kds-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
             </div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Administración</div>
-            <div onclick="app.switchView('inventario')" id="nav-inventario" class="nav-item">
+            <div onclick="window.app.switchView('inventario')" id="nav-inventario" class="nav-item">
                 <span class="mr-3 text-xl">📦</span> Inventario
             </div>
-            <div onclick="app.switchView('reportes')" id="nav-reportes" class="nav-item">
+            <div onclick="window.app.switchView('reportes')" id="nav-reportes" class="nav-item">
                 <span class="mr-3 text-xl">📊</span> Reportes
             </div>
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2 px-2">Soporte</div>
-            <div onclick="app.switchView('guia')" id="nav-guia" class="nav-item">
+            <div onclick="window.app.switchView('guia')" id="nav-guia" class="nav-item">
                 <span class="mr-3 text-xl">📚</span> Guía Legal SPS
             </div>
         </nav>
@@ -58,7 +58,7 @@
     <main class="flex-1 h-screen overflow-y-auto relative">
         <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
             <div class="font-bold text-lg">🍲 Sazón SPS</div>
-            <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded p-2 text-sm" onchange="app.switchView(this.value)">
+            <select id="mobile-nav" class="bg-slate-800 text-white border-none rounded p-2 text-sm" onchange="window.app.switchView(this.value)">
                 <option value="dashboard">Inicio</option>
                 <option value="pos">Punto de Venta</option>
                 <option value="kds">Cocina</option>
@@ -77,4 +77,408 @@
                         <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Ingresos de Caja</div>
                         <div class="text-3xl font-bold" id="dash-ventas">L. 0.00</div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500">
+                        <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Tickets Emitidos</div>
+                        <div class="text-3xl font-bold" id="dash-ordenes">0</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                        <div class="text-sm text-slate-500 font-semibold uppercase mb-1">Alertas de Stock</div>
+                        <div class="text-3xl font-bold" id="dash-alertas">0</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="font-bold text-lg mb-4 text-slate-700">Acciones Rápidas</h3>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="window.app.switchView('pos')" class="bg-amber-100 text-amber-700 px-6 py-3 rounded-lg font-semibold hover:bg-amber-200 transition">📝 Nueva Factura</button>
+                        <button onclick="window.app.switchView('kds')" class="bg-slate-100 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-200 transition">🍳 Ver Cocina</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-pos" class="hidden h-[calc(100vh-8rem)]">
+                <div class="flex flex-col lg:flex-row gap-6 h-full">
+                    <div class="lg:w-2/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                            <h3 class="font-bold text-slate-700">Menú de Productos</h3>
+                        </div>
+                        <div class="p-4 overflow-y-auto flex-1">
+                            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                        </div>
+                    </div>
+                    <div class="lg:w-1/3 bg-white rounded-xl shadow-sm flex flex-col h-full border border-slate-200">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                            <h3 class="font-bold text-slate-700">Orden #<span id="pos-order-number">1</span></h3>
+                        </div>
+                        <div id="cart-items" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50/50"></div>
+                        <div class="p-4 border-t border-slate-200 bg-white rounded-b-xl">
+                            <div class="flex justify-between font-bold text-2xl text-slate-800 mb-4">
+                                <span>Total</span>
+                                <span id="cart-total">L. 0.00</span>
+                            </div>
+                            <button onclick="window.app.openCheckoutModal()" id="btn-cobrar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 text-lg" disabled>💳 Cobrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-kds" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Panel de Cocina</h2>
+                    <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">Pendientes: <span id="kds-count">0</span></span>
+                </div>
+                <div id="kds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="col-span-full text-center text-slate-400 py-20" id="kds-empty">
+                        <span class="text-5xl mb-4 block">🍽️</span>No hay órdenes pendientes.
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-inventario" class="hidden">
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Gestión de Inventario</h2></div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                    <h3 class="font-bold text-slate-700 mb-4">➕ Agregar Producto</h3>
+                    <form onsubmit="window.app.addProduct(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nombre</label>
+                            <input type="text" id="new-name" required class="w-full border border-slate-300 rounded p-2 outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Precio (L)</label>
+                            <input type="number" id="new-price" required min="1" step="0.5" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Costo (L)</label>
+                            <input type="number" id="new-cost" required min="0" step="0.5" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stock</label>
+                            <input type="number" id="new-stock" required min="0" class="w-full border border-slate-300 rounded p-2 focus:border-amber-500 outline-none">
+                        </div>
+                        <div class="md:col-span-5 flex justify-end mt-2">
+                            <button type="submit" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Producto</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Precio</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Stock</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-reportes" class="hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-slate-800">Reportes Financieros</h2>
+                    <button onclick="window.app.downloadCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">
+                        📥 Descargar Excel (SAR)
+                    </button>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="chart-container"><canvas id="accountingChart"></canvas></div>
+                </div>
+            </div>
+
+            <div id="view-guia" class="hidden">
+                <div class="bg-white rounded-xl shadow-sm p-8 max-w-4xl mx-auto">
+                    <h2 class="text-2xl font-bold mb-4">Manual Legal SPS</h2>
+                    <p class="text-slate-600 mb-6">Información de consulta para la administración del negocio.</p>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-amber-500 pl-4 py-2">
+                            <h4 class="font-bold text-slate-800">1. SAR (Facturación)</h4>
+                            <p class="text-sm text-slate-600 mt-1">Es obligatorio emitir documentos fiscales. El CAI debe ir impreso en el ticket.</p>
+                        </div>
+                        <div class="border-l-4 border-amber-500 pl-4 py-2">
+                            <h4 class="font-bold text-slate-800">2. Alcaldía Municipal (SPS)</h4>
+                            <p class="text-sm text-slate-600 mt-1">Renovación anual del Permiso de Operación en el mes de Enero. Requiere pago de volumen de ventas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-checkout" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-emerald-600 p-4 text-white text-center"><h3 class="font-bold text-xl">Finalizar Venta</h3></div>
+            <div class="p-6 space-y-6">
+                <div class="flex justify-between items-center text-xl"><span class="text-slate-500">Total:</span><span class="font-bold text-3xl text-slate-800" id="modal-total">L. 0.00</span></div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label>
+                    <select id="modal-metodo" class="w-full border p-3 rounded-lg font-semibold outline-none" onchange="window.app.toggleCashInput()">
+                        <option value="efectivo">💵 Efectivo</option>
+                        <option value="tarjeta">💳 Tarjeta / POS</option>
+                    </select>
+                </div>
+                <div id="cash-input-section">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Efectivo Recibido (L.)</label>
+                    <input type="number" id="modal-recibido" placeholder="0.00" class="w-full border-2 border-emerald-500 rounded-lg p-3 text-2xl font-bold text-right outline-none" onkeyup="window.app.calculateChange()" onchange="window.app.calculateChange()">
+                    <div class="flex justify-between items-center mt-4 bg-slate-100 p-4 rounded-lg"><span class="font-bold text-slate-600">VUELTO:</span><span class="font-bold text-2xl text-slate-400" id="modal-vuelto">L. 0.00</span></div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.app.closeCheckoutModal()" class="flex-1 bg-slate-200 font-bold py-3 rounded-lg">Cancelar</button>
+                    <button onclick="window.app.processSale()" id="btn-confirmar-venta" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-lg disabled:opacity-50" disabled>Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log("✅ Script detectado por el navegador. Analizando código...");
+
+        window.app = {
+            state: {
+                activeView: 'dashboard',
+                orderCounter: 1,
+                inventory: [
+                    { id: 'p1', name: 'Baleada Especial', price: 45, cost: 20, stock: 50, icon: '🌮' },
+                    { id: 'p2', name: 'Pollo con Tajadas', price: 120, cost: 65, stock: 25, icon: '🍗' },
+                    { id: 'p3', name: 'Refresco Botella', price: 20, cost: 12, stock: 100, icon: '🥤' }
+                ],
+                cart: [], cartTotal: 0, activeOrders: [], salesHistory: [], chartInstance: null
+            },
+
+            init() { 
+                console.log("✅ Inicializando el sistema...");
+                this.renderInventory(); this.renderPOSMenu(); this.updateDashboard(); 
+            },
+
+            switchView(viewId) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                const navBtn = document.getElementById(`nav-${viewId}`);
+                if(navBtn) navBtn.classList.add('active');
+                
+                ['dashboard', 'pos', 'kds', 'inventario', 'reportes', 'guia'].forEach(id => {
+                    document.getElementById(`view-${id}`).classList.add('hidden');
+                });
+                document.getElementById(`view-${viewId}`).classList.remove('hidden');
+                this.state.activeView = viewId;
+
+                if(viewId === 'dashboard') this.updateDashboard();
+                if(viewId === 'reportes') this.renderChart();
+                if(viewId === 'kds') this.renderKDS();
+            },
+
+            renderPOSMenu() {
+                const grid = document.getElementById('product-grid'); grid.innerHTML = '';
+                this.state.inventory.forEach(item => {
+                    const disabled = item.stock <= 0 ? 'opacity-50 grayscale' : 'cursor-pointer hover:border-amber-400 hover:shadow-md';
+                    grid.innerHTML += `
+                        <div onclick="window.app.addToCart('${item.id}')" class="bg-white border p-4 rounded-xl text-center ${disabled}">
+                            <div class="text-3xl">${item.icon}</div>
+                            <div class="font-bold text-sm leading-tight mt-2">${item.name}</div>
+                            <div class="text-emerald-600 font-bold mt-1">L. ${item.price}</div>
+                        </div>`;
+                });
+                document.getElementById('pos-order-number').innerText = this.state.orderCounter;
+            },
+
+            addToCart(productId) {
+                const product = this.state.inventory.find(p => p.id === productId);
+                if (!product || product.stock <= 0) return;
+                const existing = this.state.cart.find(c => c.id === productId);
+                if (existing) { if(existing.qty < product.stock) existing.qty++; } 
+                else { this.state.cart.push({ ...product, qty: 1 }); }
+                this.updateCartUI();
+            },
+
+            removeFromCart(productId) {
+                this.state.cart = this.state.cart.filter(c => c.id !== productId);
+                this.updateCartUI();
+            },
+
+            updateCartUI() {
+                const container = document.getElementById('cart-items');
+                const btnCobrar = document.getElementById('btn-cobrar');
+                container.innerHTML = ''; this.state.cartTotal = 0;
+
+                if (this.state.cart.length === 0) {
+                    container.innerHTML = '<div class="text-center text-slate-400 mt-10">La orden está vacía</div>';
+                    btnCobrar.disabled = true; document.getElementById('cart-total').innerText = 'L. 0.00'; return;
+                }
+
+                btnCobrar.disabled = false;
+                this.state.cart.forEach(item => {
+                    const total = item.price * item.qty; this.state.cartTotal += total;
+                    container.innerHTML += `
+                        <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center">
+                            <div><div class="font-bold text-sm">${item.name}</div><div class="text-xs">${item.qty} x L.${item.price}</div></div>
+                            <div class="flex items-center gap-3"><div class="font-bold text-emerald-600">L.${total}</div>
+                            <button onclick="window.app.removeFromCart('${item.id}')" class="text-slate-300 hover:text-red-500">✖</button></div>
+                        </div>`;
+                });
+                document.getElementById('cart-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`;
+            },
+
+            openCheckoutModal() {
+                document.getElementById('modal-total').innerText = `L. ${this.state.cartTotal.toFixed(2)}`;
+                document.getElementById('modal-recibido').value = '';
+                this.toggleCashInput();
+                document.getElementById('modal-checkout').classList.remove('hidden');
+                setTimeout(() => document.getElementById('modal-recibido').focus(), 100);
+            },
+            
+            closeCheckoutModal() { document.getElementById('modal-checkout').classList.add('hidden'); },
+
+            toggleCashInput() {
+                const method = document.getElementById('modal-metodo').value;
+                const cashSection = document.getElementById('cash-input-section');
+                if(method === 'efectivo') { cashSection.classList.remove('hidden'); this.calculateChange(); } 
+                else { cashSection.classList.add('hidden'); document.getElementById('btn-confirmar-venta').disabled = false; }
+            },
+
+            calculateChange() {
+                const rec = parseFloat(document.getElementById('modal-recibido').value) || 0;
+                const change = rec - this.state.cartTotal;
+                const display = document.getElementById('modal-vuelto');
+                const btn = document.getElementById('btn-confirmar-venta');
+
+                if (!document.getElementById('modal-recibido').value) { display.innerText = 'L. 0.00'; display.className = 'font-bold text-2xl text-slate-400'; btn.disabled = true; } 
+                else if (change >= 0) { display.innerText = `L. ${change.toFixed(2)}`; display.className = 'font-bold text-2xl text-emerald-500'; btn.disabled = false; } 
+                else { display.innerText = `Faltan L. ${Math.abs(change).toFixed(2)}`; display.className = 'font-bold text-2xl text-red-500'; btn.disabled = true; }
+            },
+
+            processSale() {
+                const newOrder = {
+                    id: 'ORD-' + Date.now(), number: this.state.orderCounter,
+                    items: [...this.state.cart], total: this.state.cartTotal, time: new Date()
+                };
+
+                this.state.cart.forEach(c => { const inv = this.state.inventory.find(p => p.id === c.id); if(inv) inv.stock -= c.qty; });
+                this.state.activeOrders.push(newOrder);
+                
+                this.state.orderCounter++; this.state.cart = [];
+                this.updateCartUI(); this.renderPOSMenu(); this.renderInventory();
+                this.renderKDS(); this.updateDashboard(); this.closeCheckoutModal();
+                
+                const btn = document.getElementById('btn-cobrar');
+                btn.innerText = "¡Enviado a Cocina!"; btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                setTimeout(() => { btn.innerText = "💳 Cobrar"; btn.classList.replace('bg-blue-600', 'bg-emerald-600'); }, 2000);
+            },
+
+            renderKDS() {
+                const grid = document.getElementById('kds-grid');
+                const empty = document.getElementById('kds-empty');
+                const badge = document.getElementById('kds-badge');
+                
+                grid.innerHTML = '';
+                document.getElementById('kds-count').innerText = this.state.activeOrders.length;
+                
+                if(this.state.activeOrders.length > 0) {
+                    badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden');
+                    empty.style.display = 'none';
+                    this.state.activeOrders.forEach(order => {
+                        let html = ''; order.items.forEach(i => html += `<div class="border-b py-2 font-semibold text-slate-700">${i.qty}x ${i.name}</div>`);
+                        grid.innerHTML += `
+                            <div class="bg-amber-50 rounded-xl shadow-md border-t-4 border-amber-400 flex flex-col">
+                                <div class="bg-amber-100 p-3 flex justify-between font-black text-amber-900 text-lg"><span>#${order.number}</span></div>
+                                <div class="p-4 flex-1">${html}</div>
+                                <button onclick="window.app.completeOrder('${order.id}')" class="w-full bg-emerald-500 text-white font-bold py-3">✅ Marcar Listo</button>
+                            </div>`;
+                    });
+                } else { badge.classList.add('hidden'); empty.style.display = 'block'; }
+            },
+
+            completeOrder(orderId) {
+                const idx = this.state.activeOrders.findIndex(o => o.id === orderId);
+                if(idx > -1) {
+                    const order = this.state.activeOrders[idx];
+                    order.items.forEach(item => {
+                        this.state.salesHistory.push({ orderNumber: order.number, name: item.name, qty: item.qty, revenue: item.price * item.qty, cost: item.cost * item.qty });
+                    });
+                    this.state.activeOrders.splice(idx, 1);
+                    this.renderKDS(); this.updateDashboard();
+                }
+            },
+
+            addProduct(e) {
+                e.preventDefault();
+                const newProduct = {
+                    id: 'p' + Date.now(),
+                    name: document.getElementById('new-name').value,
+                    price: parseFloat(document.getElementById('new-price').value),
+                    cost: parseFloat(document.getElementById('new-cost').value),
+                    stock: parseInt(document.getElementById('new-stock').value),
+                    icon: '🍲'
+                };
+                this.state.inventory.push(newProduct);
+                e.target.reset();
+                this.renderInventory();
+                this.renderPOSMenu();
+            },
+
+            deleteProduct(id) {
+                if(confirm("¿Seguro que deseas eliminar este producto?")) {
+                    this.state.inventory = this.state.inventory.filter(p => p.id !== id);
+                    this.renderInventory();
+                    this.renderPOSMenu();
+                }
+            },
+
+            renderInventory() {
+                const tbody = document.getElementById('inventory-tbody'); tbody.innerHTML = '';
+                this.state.inventory.forEach(item => {
+                    tbody.innerHTML += `<tr>
+                        <td class="px-6 py-4 font-semibold">${item.icon} ${item.name}</td>
+                        <td class="px-6 py-4">L. ${item.price.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-bold text-emerald-600">${item.stock}</td>
+                        <td class="px-6 py-4 text-right"><button onclick="window.app.deleteProduct('${item.id}')" class="text-red-500 hover:text-red-700 font-bold">✖ Eliminar</button></td>
+                    </tr>`;
+                });
+            },
+
+            updateDashboard() {
+                let totalVentas = 0; let ordenesUnicas = new Set();
+                this.state.salesHistory.forEach(sale => { totalVentas += sale.revenue; ordenesUnicas.add(sale.orderNumber); });
+                this.state.activeOrders.forEach(order => { totalVentas += order.total; ordenesUnicas.add(order.number); });
+                let alertasStock = this.state.inventory.filter(p => p.stock <= 10).length;
+
+                document.getElementById('dash-ventas').innerText = `L. ${totalVentas.toFixed(2)}`;
+                document.getElementById('dash-ordenes').innerText = ordenesUnicas.size;
+                document.getElementById('dash-alertas').innerText = alertasStock;
+                
+                const badge = document.getElementById('kds-badge');
+                if(this.state.activeOrders.length > 0) { badge.innerText = this.state.activeOrders.length; badge.classList.remove('hidden'); } 
+                else { badge.classList.add('hidden'); }
+            },
+
+            renderChart() {
+                const ctx = document.getElementById('accountingChart').getContext('2d'); const agg = {};
+                if(this.state.salesHistory.length === 0) { if (this.state.chartInstance) this.state.chartInstance.destroy(); return; }
+                this.state.salesHistory.forEach(sale => {
+                    if(!agg[sale.name]) agg[sale.name] = { revenue: 0, cost: 0 };
+                    agg[sale.name].revenue += sale.revenue; agg[sale.name].cost += sale.cost;
+                });
+                const labels = Object.keys(agg); const costData = labels.map(l => agg[l].cost); const profitData = labels.map(l => agg[l].revenue - agg[l].cost);
+                if (this.state.chartInstance) this.state.chartInstance.destroy();
+                this.state.chartInstance = new Chart(ctx, {
+                    type: 'bar', data: { labels: labels, datasets: [ { label: 'Ganancia', data: profitData, backgroundColor: '#10b981' }, { label: 'Costo', data: costData, backgroundColor: '#f43f5e' } ] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+            },
+
+            downloadCSV() {
+                if(this.state.salesHistory.length === 0) { alert("No hay ventas despachadas para exportar."); return; }
+                let csv = "data:text/csv;charset=utf-8,Orden,Producto,Cantidad,Ingreso_L,Costo_L\r\n";
+                this.state.salesHistory.forEach(r => csv += `${r.orderNumber},${r.name},${r.qty},${r.revenue},${r.cost}\r\n`);
+                const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Reporte_SPS.csv";
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            }
+        };
+
+        window.onload = () => { 
+            console.log("✅ DOM completamente cargado, arrancando app.init()...");
+            window.app.init(); 
+        };
+    </script>
+</body>
+</html>
