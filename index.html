@@ -312,37 +312,6 @@
                         </div>
                     </div>
                 </div>
-                
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tickets</div><div class="text-2xl font-black text-slate-800 mt-1" id="cierre-tickets">0</div></div>
-                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efectivo</div><div class="text-2xl font-black text-emerald-600 mt-1" id="cierre-efectivo">L. 0.00</div></div>
-                        <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tarjeta</div><div class="text-2xl font-black text-blue-600 mt-1" id="cierre-tarjeta">L. 0.00</div></div>
-                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 shadow text-white"><div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Total Bruto</div><div class="text-2xl font-black mt-1" id="cierre-total">L. 0.00</div></div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
-                            <h3 class="font-black text-slate-800 mb-4">Desglose Contable</h3>
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between"><span class="text-slate-500">Subtotal (sin ISV)</span><span class="font-bold text-slate-800" id="cierre-subtotal">L. 0.00</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500">ISV cobrado (15%)</span><span class="font-bold text-amber-600" id="cierre-isv">L. 0.00</span></div>
-                                <div class="flex justify-between border-t border-slate-100 pt-3"><span class="text-slate-500">Costo de productos</span><span class="font-bold text-rose-500" id="cierre-costo">L. 0.00</span></div>
-                                <div class="flex justify-between border-t-2 border-slate-200 pt-3"><span class="text-slate-700 font-bold">Ganancia neta</span><span class="font-black text-emerald-600 text-lg" id="cierre-ganancia">L. 0.00</span></div>
-                                <div class="flex justify-between text-xs text-slate-400"><span>Anuladas</span><span id="cierre-anuladas">0 facturas</span></div>
-                            </div>
-                        </div>
-                        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
-                            <h3 class="font-black text-slate-800 mb-4">Arqueo de Efectivo</h3>
-                            <div class="space-y-3">
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fondo inicial (L.)</label><input type="number" id="arqueo-fondo" oninput="window.app.calcArqueo()" min="0" step="0.01" placeholder="0.00" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-amber-500 font-bold"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Efectivo esperado</label><div class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl p-3 font-black text-xl text-slate-800" id="arqueo-esperado">L. 0.00</div></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Efectivo contado (L.)</label><input type="number" id="arqueo-contado" oninput="window.app.calcArqueo()" min="0" step="0.01" placeholder="0.00" class="w-full bg-white border-2 border-emerald-300 rounded-xl p-3 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500"></div>
-                                <div class="bg-slate-800 rounded-xl p-4 text-white flex justify-between items-center"><span class="font-bold text-sm uppercase tracking-widest text-slate-300">Diferencia</span><span class="font-black text-2xl" id="arqueo-dif">L. 0.00</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- 4. INVENTARIO -->
                 <div id="view-inventario" class="hidden">
