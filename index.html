@@ -279,16 +279,40 @@
                 <!-- 3.6 CIERRE DE CAJA -->
                 <div id="view-cierre" class="hidden">
                     <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                        <div><h2 class="text-3xl font-black text-slate-800 tracking-tight">Cierre de Caja</h2><p class="text-slate-500 font-medium mt-1">Corte Z y arqueo del período seleccionado.</p></div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex bg-slate-200/80 p-1.5 rounded-xl shadow-inner">
-                                <button onclick="window.app.setCierreFilter('hoy')" id="cierre-hoy" class="filter-btn active px-4 py-2 rounded-lg text-xs font-bold">Hoy</button>
-                                <button onclick="window.app.setCierreFilter('ayer')" id="cierre-ayer" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Ayer</button>
-                                <button onclick="window.app.setCierreFilter('semana')" id="cierre-semana" class="filter-btn px-4 py-2 rounded-lg text-xs font-bold text-slate-500">Semana</button>
-                            </div>
-                            <button onclick="window.app.printCierre()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2"><span>🖨️</span> Imprimir</button>
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Control de Caja</h2>
+                            <p class="text-slate-500 font-medium mt-1">Apertura, arqueo de turnos y auditoría de faltantes/sobrantes.</p>
                         </div>
                     </div>
+
+                    <div class="bg-slate-200/80 p-1.5 rounded-xl inline-flex gap-1 mb-6 shadow-inner">
+                        <button onclick="window.app.switchCajaTab('operacion')" id="tab-caja-operacion" class="cfg-tab active px-5 py-2 rounded-lg text-sm font-bold text-slate-600">💰 Operación Actual</button>
+                        <button onclick="window.app.switchCajaTab('historico')" id="tab-caja-historico" class="cfg-tab px-5 py-2 rounded-lg text-sm font-bold text-slate-500">📊 Histórico de Cierres</button>
+                    </div>
+
+                    <div id="caja-operacion" class="animate-fade-in">
+                        <div id="caja-dinamica-content"></div>
+                    </div>
+
+                    <div id="caja-historico" class="hidden animate-fade-in bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-100">
+                                <thead class="bg-slate-50/80">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Turno / Fechas</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cajero</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ventas (Efec / Tarj)</th>
+                                        <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Esperado vs Contado</th>
+                                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Diferencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="caja-historico-tbody" class="bg-white divide-y divide-slate-50">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div class="bg-white rounded-2xl p-5 shadow border border-slate-100"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tickets</div><div class="text-2xl font-black text-slate-800 mt-1" id="cierre-tickets">0</div></div>
@@ -1553,86 +1577,197 @@
             },
 
             // ===== CIERRE =====
-            setCierreFilter(f) {
-                this.state.cierreFilter = f;
-                document.querySelectorAll('[id^=cierre-hoy],[id^=cierre-ayer],[id^=cierre-semana]').forEach(b => { b.classList.remove('active', 'bg-slate-800', 'text-white'); b.classList.add('text-slate-500'); });
-                const active = document.getElementById(`cierre-${f}`); if (active) { active.classList.add('active'); active.classList.remove('text-slate-500'); }
-                this.renderCierre();
+            // ===== GESTIÓN DE CAJA (APERTURA Y CIERRE DE TURNOS) =====
+            switchCajaTab(tab) {
+                document.getElementById('tab-caja-operacion').classList.toggle('active', tab === 'operacion');
+                document.getElementById('tab-caja-historico').classList.toggle('active', tab === 'historico');
+                document.getElementById('caja-operacion').classList.toggle('hidden', tab !== 'operacion');
+                document.getElementById('caja-historico').classList.toggle('hidden', tab !== 'historico');
+                
+                if (tab === 'operacion') this.renderCierre();
+                if (tab === 'historico') this.renderCajaHistorico();
             },
+
             renderCierre() {
-                const orders = this.getFilteredOrders(this.state.cierreFilter);
-                const anuladas = this.filterByPeriod(this.state.salesHistory.filter(o => o.status === 'anulado'), this.state.cierreFilter);
-                let efectivo = 0, tarjeta = 0, sub = 0, isvT = 0, costo = 0;
+                const container = document.getElementById('caja-dinamica-content');
+                const shift = this.state.currentShift;
+
+                // 1. SI NO HAY TURNO ABIERTO -> MOSTRAR PANTALLA DE APERTURA
+                if (!shift) {
+                    container.innerHTML = `
+                    <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-md mx-auto text-center mt-10">
+                        <div class="text-6xl mb-4 opacity-80">🌅</div>
+                        <h3 class="text-2xl font-black text-slate-800 mb-2">Apertura de Caja</h3>
+                        <p class="text-slate-500 mb-8 text-sm">No hay ningún turno abierto. Ingrese el fondo inicial (sencillo) para comenzar a operar y facturar.</p>
+                        <form onsubmit="window.app.openShift(event)">
+                            <div class="text-left mb-6">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Fondo Inicial Contado (Lempiras)</label>
+                                <input type="number" id="apertura-fondo" required min="0" step="0.01" placeholder="0.00" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-3xl font-black outline-none focus:border-emerald-500 text-slate-700 transition-colors text-center">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 text-lg tracking-widest transition-all">ABRIR TURNO</button>
+                        </form>
+                    </div>`;
+                    return;
+                }
+
+                // 2. SI HAY TURNO ABIERTO -> CALCULAR VENTAS Y MOSTRAR PANTALLA DE CIERRE
+                // Filtramos las ventas que se hicieron DESPUÉS de abrir la caja
+                const orders = this.state.salesHistory.filter(o => o.dateObj >= shift.openedAtObj && o.status !== 'anulado');
+                let ef = 0, tj = 0, sub = 0, isv = 0;
                 orders.forEach(o => {
-                    if (o.method === 'efectivo') efectivo += o.total; else tarjeta += o.total;
-                    sub += (o.subtotal || 0); isvT += (o.isv || 0);
-                    o.items.forEach(i => costo += (i.cost || 0) * i.qty);
+                    if (o.method === 'efectivo') ef += o.total; else tj += o.total;
+                    sub += (o.subtotal || 0); isv += (o.isv || 0);
                 });
-                const total = efectivo + tarjeta;
-                document.getElementById('cierre-tickets').innerText = orders.length;
-                document.getElementById('cierre-efectivo').innerText = this.fmt(efectivo);
-                document.getElementById('cierre-tarjeta').innerText = this.fmt(tarjeta);
-                document.getElementById('cierre-total').innerText = this.fmt(total);
-                document.getElementById('cierre-subtotal').innerText = this.fmt(sub);
-                document.getElementById('cierre-isv').innerText = this.fmt(isvT);
-                document.getElementById('cierre-costo').innerText = this.fmt(costo);
-                document.getElementById('cierre-ganancia').innerText = this.fmt(total - costo);
-                document.getElementById('cierre-anuladas').innerText = `${anuladas.length} facturas`;
-                this.calcArqueo();
+                
+                const totalVentas = ef + tj;
+                const esperadoEnCaja = shift.initialAmount + ef; // Fondo + Efectivo
+                const openedAtStr = shift.openedAtObj.toLocaleString('es-HN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+
+                container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                        <div class="flex justify-between items-start mb-6">
+                            <div><h3 class="font-black text-2xl tracking-tight">Resumen del Turno</h3><p class="text-slate-400 text-sm mt-1">Abierto hoy a las ${openedAtStr}</p></div>
+                            <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-emerald-500/30">Turno Activo</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50"><div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fondo Inicial</div><div class="text-xl font-black">${this.fmt(shift.initialAmount)}</div></div>
+                            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50"><div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Tickets Emitidos</div><div class="text-xl font-black">${orders.length}</div></div>
+                        </div>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between text-slate-300"><span>Ventas Efectivo</span><span class="font-bold text-white">${this.fmt(ef)}</span></div>
+                            <div class="flex justify-between text-slate-300"><span>Ventas Tarjeta/Otros</span><span class="font-bold text-white">${this.fmt(tj)}</span></div>
+                            <div class="flex justify-between items-end border-t border-slate-700 pt-3 mt-3">
+                                <span class="text-slate-400 font-bold uppercase tracking-widest text-xs">Total Facturado</span>
+                                <span class="font-black text-2xl">${this.fmt(totalVentas)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-100">
+                        <h3 class="font-black text-slate-800 text-xl mb-6 flex items-center gap-2"><span class="text-amber-500">⚖️</span> Arqueo Físico y Cierre</h3>
+                        
+                        <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex justify-between items-center mb-6">
+                            <span class="font-bold text-slate-500 text-sm">Efectivo Esperado (Fondo + Ventas)</span>
+                            <span class="font-black text-xl text-slate-800">${this.fmt(esperadoEnCaja)}</span>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Efectivo Físico Contado (L.)</label>
+                            <input type="number" id="cierre-contado-final" onkeyup="window.app.calcDiferenciaCierre(${esperadoEnCaja})" min="0" step="0.01" placeholder="0.00" class="w-full bg-white border-2 border-slate-300 focus:border-amber-500 rounded-xl p-4 text-3xl font-black outline-none text-slate-800 text-center transition-all">
+                        </div>
+
+                        <div class="flex justify-between items-center bg-slate-100 rounded-2xl p-4 mb-8">
+                            <span class="font-bold text-slate-500 uppercase tracking-widest text-xs">Diferencia</span>
+                            <span id="cierre-dif-final" class="font-black text-2xl text-slate-400">L. 0.00</span>
+                        </div>
+
+                        <button onclick="window.app.closeShift(${esperadoEnCaja}, ${ef}, ${tj}, ${totalVentas})" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-black py-4 rounded-xl shadow-lg shadow-rose-500/30 text-lg tracking-widest transition-all">CERRAR TURNO Z</button>
+                    </div>
+                </div>`;
             },
-            calcArqueo() {
-                const fondo = parseFloat(document.getElementById('arqueo-fondo').value) || 0;
-                const contado = parseFloat(document.getElementById('arqueo-contado').value) || 0;
-                const ventasEfectivo = this.getFilteredOrders(this.state.cierreFilter).filter(o => o.method === 'efectivo').reduce((s, o) => s + o.total, 0);
-                const esperado = fondo + ventasEfectivo;
+
+            calcDiferenciaCierre(esperado) {
+                const contado = parseFloat(document.getElementById('cierre-contado-final').value) || 0;
                 const dif = contado - esperado;
-                document.getElementById('arqueo-esperado').innerText = this.fmt(esperado);
-                const difEl = document.getElementById('arqueo-dif');
-                difEl.innerText = this.fmt(dif);
-                difEl.className = `font-black text-2xl ${dif > 0.01 ? 'text-emerald-300' : dif < -0.01 ? 'text-rose-300' : 'text-white'}`;
+                const el = document.getElementById('cierre-dif-final');
+                el.innerText = this.fmt(dif);
+                
+                // Color dinámico: Verde si sobra, Rojo si falta, Gris si cuadra exacto
+                if (dif > 0.01) el.className = 'font-black text-2xl text-emerald-500';
+                else if (dif < -0.01) el.className = 'font-black text-2xl text-rose-500';
+                else el.className = 'font-black text-2xl text-slate-800';
             },
-            printCierre() {
-                const orders = this.getFilteredOrders(this.state.cierreFilter);
-                const periodo = { hoy: 'HOY', ayer: 'AYER', semana: 'ESTA SEMANA' }[this.state.cierreFilter] || '';
-                let ef = 0, tj = 0, sub = 0, isv = 0, costo = 0;
-                orders.forEach(o => { if (o.method === 'efectivo') ef += o.total; else tj += o.total; sub += (o.subtotal || 0); isv += (o.isv || 0); o.items.forEach(i => costo += (i.cost || 0) * i.qty); });
-                const total = ef + tj;
-                const line = '<hr style="border:0;border-top:1px dashed #000;margin:6px 0">';
-                const fmt = v => `L. ${Number(v).toFixed(2)}`;
-                const f = this.state.fiscal;
-                const fondo = parseFloat(document.getElementById('arqueo-fondo').value) || 0;
-                const contado = parseFloat(document.getElementById('arqueo-contado').value) || 0;
-                const dif = contado - (fondo + ef);
-                const html = `
-                    <div style="text-align:center"><h1 style="font-size:14px;font-weight:900">${f.razonSocial || 'Sazón SPS'}</h1>${f.rtn ? `<div>RTN: ${f.rtn}</div>` : ''}</div>
-                    ${line}<div style="text-align:center;font-weight:bold">CORTE / CIERRE DE CAJA</div>
-                    <div style="text-align:center">Período: ${periodo}</div>
-                    <div style="text-align:center;font-size:10px">${new Date().toLocaleString('es-HN')}</div>
-                    <div style="text-align:center;font-size:10px">Cajero: ${(firebase.auth().currentUser?.email || '').split('@')[0]}</div>
-                    ${line}
-                    <div style="display:flex;justify-content:space-between"><span>Tickets emitidos:</span><span>${orders.length}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${fmt(sub)}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>ISV cobrado:</span><span>${fmt(isv)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>TOTAL BRUTO:</span><span>${fmt(total)}</span></div>
-                    ${line}
-                    <div style="display:flex;justify-content:space-between"><span>Efectivo:</span><span>${fmt(ef)}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>Tarjeta/Transf:</span><span>${fmt(tj)}</span></div>
-                    ${line}
-                    <div style="display:flex;justify-content:space-between"><span>Costo productos:</span><span>${fmt(costo)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>GANANCIA:</span><span>${fmt(total - costo)}</span></div>
-                    ${line}
-                    <div style="font-weight:bold">ARQUEO EFECTIVO</div>
-                    <div style="display:flex;justify-content:space-between"><span>Fondo inicial:</span><span>${fmt(fondo)}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>Ventas efectivo:</span><span>${fmt(ef)}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>Esperado:</span><span>${fmt(fondo + ef)}</span></div>
-                    <div style="display:flex;justify-content:space-between"><span>Contado:</span><span>${fmt(contado)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-weight:bold"><span>DIFERENCIA:</span><span>${fmt(dif)}</span></div>
-                    ${line}
-                    <div style="text-align:center;font-size:10px">_____________________________<br>Firma responsable</div>
-                `;
-                document.getElementById('ticket-content').innerHTML = html;
-                document.getElementById('modal-ticket').classList.remove('hidden');
-            }
+
+            async openShift(e) {
+                e.preventDefault(); if (!db) return;
+                const fondo = parseFloat(document.getElementById('apertura-fondo').value) || 0;
+                try {
+                    await db.collection('shifts').add({
+                        status: 'open',
+                        openedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        openedBy: firebase.auth().currentUser.email,
+                        initialAmount: fondo
+                    });
+                    this.toast('Turno Abierto Exitosamente', 'success');
+                } catch(err) { this.toast('Error al abrir caja', 'error'); }
+            },
+
+            async closeShift(esperado, ef, tj, totalVentas) {
+                if (!db) return;
+                const contado = parseFloat(document.getElementById('cierre-contado-final').value);
+                if (isNaN(contado)) return this.toast('Ingrese el efectivo contado', 'warn');
+                
+                const dif = contado - esperado;
+                const mensajeDiferencia = dif > 0 ? `<br><strong class="text-emerald-500">Sobrante: ${this.fmt(dif)}</strong>` : dif < 0 ? `<br><strong class="text-rose-500">Faltante: ${this.fmt(Math.abs(dif))}</strong>` : '<br><strong class="text-slate-800">Caja Cuadrada Exacta</strong>';
+                
+                const ok = await this.confirm({ 
+                    title: 'Cerrar Turno', 
+                    msg: `Al cerrar el turno se registrará la auditoría en el histórico.${mensajeDiferencia}<br><br>¿Confirma el cierre?`, 
+                    okText: 'Cerrar Definitivamente', icon: '💼', okColor: 'rose' 
+                });
+                
+                if (!ok) return;
+
+                try {
+                    await db.collection('shifts').doc(this.state.currentShift.id).update({
+                        status: 'closed',
+                        closedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        closedBy: firebase.auth().currentUser.email,
+                        cashSales: ef,
+                        cardSales: tj,
+                        totalSales: totalVentas,
+                        expectedCash: esperado,
+                        countedCash: contado,
+                        difference: dif
+                    });
+                    this.toast('Corte Z realizado', 'success');
+                } catch(err) { this.toast('Error al cerrar caja', 'error'); }
+            },
+
+            renderCajaHistorico() {
+                const tbody = document.getElementById('caja-historico-tbody');
+                tbody.innerHTML = '';
+                const closedShifts = this.state.shifts.filter(s => s.status === 'closed');
+
+                if (closedShifts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-400 py-12 font-medium"><div class="text-4xl mb-3 opacity-50">📁</div>No hay cierres históricos registrados.</td></tr>';
+                    return;
+                }
+
+                closedShifts.forEach(shift => {
+                    const openDate = shift.openedAtObj ? shift.openedAtObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                    const closeDate = shift.closedAtObj ? shift.closedAtObj.toLocaleString('es-HN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                    const diffStr = this.fmt(shift.difference);
+                    
+                    let diffBadge = `<span class="bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-lg text-xs uppercase tracking-widest border border-slate-200">Cuadrado</span>`;
+                    if (shift.difference > 0.01) diffBadge = `<span class="bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-lg text-xs uppercase tracking-widest border border-emerald-200">Sobró ${diffStr}</span>`;
+                    else if (shift.difference < -0.01) diffBadge = `<span class="bg-rose-100 text-rose-700 font-black px-3 py-1 rounded-lg text-xs uppercase tracking-widest border border-rose-200">Faltó ${diffStr}</span>`;
+
+                    const userDisplay = shift.closedBy ? shift.closedBy.split('@')[0] : '—';
+
+                    tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="text-xs font-bold text-emerald-600">Ape: ${openDate}</div>
+                            <div class="text-xs font-bold text-rose-500 mt-1">Cie: ${closeDate}</div>
+                        </td>
+                        <td class="px-6 py-4 font-bold text-slate-600 text-sm uppercase">${userDisplay}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="font-black text-slate-800">Total: ${this.fmt(shift.totalSales)}</div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ef: ${this.fmt(shift.cashSales)} · Tj: ${this.fmt(shift.cardSales)}</div>
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm">
+                            <div class="text-slate-500 line-through text-xs mb-1">Esp: ${this.fmt(shift.expectedCash)}</div>
+                            <div class="font-black text-slate-800">Físico: ${this.fmt(shift.countedCash)}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right">${diffBadge}</td>
+                    </tr>`;
+                });
+            },
         };
 
         // ===== INICIALIZACIÓN =====
@@ -1688,6 +1823,25 @@
                         if (window.app.state.activeView === 'pos') window.app.renderPOSMenu();
                         if (window.app.state.activeView === 'dashboard') window.app.updateDashboard();
                     });
+
+                    // shifts (Turnos de Caja)
+                    db.collection('shifts').orderBy('openedAt', 'desc').onSnapshot((snapshot) => {
+                        window.app.state.shifts = [];
+                        window.app.state.currentShift = null;
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            const shift = { id: doc.id, ...data };
+                            if (data.openedAt) shift.openedAtObj = data.openedAt.toDate();
+                            if (data.closedAt) shift.closedAtObj = data.closedAt.toDate();
+                            window.app.state.shifts.push(shift);
+                        });
+                        // Identificar si hay un turno abierto
+                        window.app.state.currentShift = window.app.state.shifts.find(s => s.status === 'open');
+                        
+                        // Si estamos en la vista de cierre, actualizar UI
+                        if (window.app.state.activeView === 'cierre') window.app.renderCierre();
+                    });
+                    
 
                     // orders
                     db.collection('orders').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
